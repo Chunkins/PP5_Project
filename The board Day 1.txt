@@ -1,0 +1,31 @@
+Me on Github
+-mtnorris
+
+Camera Tips
+-Have a camera object that  has a world space transform 
+-View Matrix = inverse (camera WorldMatrix)
+-Cancel camera roll about the z axis
+.Cross camera Z with world-y to recalculate the x-axis
+.Recalculate camera-Y using z-axis and new x-axis
+
+Debug Render Tips
+-Pre-allocate buffers CPU+GPU side
+.Make some large fixed size.
+.Icrease size if you need (not dynammically at runtime)
+
+Ex Pseudo-Code 
+<Begin frame>
+  <Rendering stuffs>
+...
+...
+DebugRenderer::beginTns() //switch to CPU buffer for tris 
+	DebugRenderer::Addvert(...) //Add verts to cpu buffer
+		     ::Addvert(...)
+		     ::Addvert(...)
+			etc.
+
+DebugRenderer::Draw()
+<EndFrame>
+CPU
+GPU
+ 
