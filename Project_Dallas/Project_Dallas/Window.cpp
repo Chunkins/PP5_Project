@@ -1,7 +1,7 @@
 // include the basic windows header file
 #include <windows.h>
 #include <windowsx.h>
-//#include "DirectxStuff.h"
+#include "DirectX_Render.h"
 
 // define the screen resolution
 #define SCREEN_WIDTH  800
@@ -21,7 +21,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	int nCmdShow)
 {
 	// Directx class
-//	DirectxStuff dx;
+	DirectX_Render dx;
 	// the handle for the window, filled by a function
 	HWND hWnd;
 	// this struct holds information for the window class
@@ -62,7 +62,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 	ShowWindow(hWnd, nCmdShow);
 
 	// set up and initialize dx
-//	dx.InitD3D(hWnd);
+	dx.InitD3D(hWnd);
 
 	// enter the main loop:
 
@@ -85,10 +85,10 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (msg.message == WM_QUIT)
 				break;
 		}
-//		dx.RenderFrame();
+		dx.RenderFrame();
 	}
 	// clean up dx
-//	dx.CleanD3D();
+	dx.CleanD3D();
 
 	// return this part of the WM_QUIT message to Windows
 	return msg.wParam;
