@@ -54,11 +54,11 @@ void DirectX_Render::Update(void)
 		//Define cube1's world space matrix
 		XMVECTOR rotaxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 		Rotation = XMMatrixRotationAxis(rotaxis, rot);
-		Translation = XMMatrixTranslation(0.0f, 0.0f, 4.0f);
-		Scale = XMMatrixScaling(3.3f, 3.3f, 1.3f);
+		Translation = XMMatrixTranslation(0.0f, -3.0f, 0.8f);
+		Scale = XMMatrixScaling(6.3f, 1.3f, 6.3f);
 
 		//Set cube1's world space using the transformations
-		cube1World = Translation * Scale * Rotation;
+		cube1World = Translation * Scale;
 
 		//Reset cube2World
 		cube2World = XMMatrixIdentity();
@@ -232,14 +232,14 @@ void DirectX_Render::InitGraphics(void)
 
 	VERTEX OurVertices[] =
 	{
-		{ -1.0f, -1.0f, -1.0f,{ 1.0f, 0.0f, 0.0f, 1.0f } },
-		{ -1.0f,  1.0f, -1.0f,{ 0.0f, 1.0f, 0.0f, 1.0f } },
-		{ 1.0f,  1.0f, -1.0f,{ 0.0f, 0.0f, 1.0f, 1.0f } },
-		{ 1.0f, -1.0f, -1.0f,{ 1.0f, 1.0f, 0.0f, 1.0f } },
-		{ -1.0f, -1.0f, 1.0f,{ 0.0f, 1.0f, 1.0f, 1.0f } },
+		{ -1.0f, -1.0f, -1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ -1.0f,  1.0f, -1.0f,{ 0.0f, 0.0f, 0.0f, 1.0f } },
+		{ 1.0f,  1.0f, -1.0f,{ 0.0f, 0.0f, 0.0f, 1.0f } },
+		{ 1.0f, -1.0f, -1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ -1.0f, -1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
 		{ -1.0f, 1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ 1.0f, 1.0f, 1.0f,{ 1.0f, 0.0f, 1.0f, 1.0f } },
-		{ 1.0f, -1.0f, 1.0f,{ 1.0f, 0.0f, 0.0f, 1.0f } },
+		{ 1.0f, 1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
+		{ 1.0f, -1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
 
 
 	};

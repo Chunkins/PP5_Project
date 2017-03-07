@@ -1,1 +1,5 @@
-﻿LINK : fatal error LNK1104: cannot open file 'libfbxsdk-md.lib'
+﻿  MathFunctions.cpp
+  FBXExport.cpp
+  DLLTransit.cpp
+  Generating Code...
+LINK : fatal error LNK1104: cannot open file 'libfbxsdk-md.lib'
