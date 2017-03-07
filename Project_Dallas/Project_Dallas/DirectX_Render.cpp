@@ -43,6 +43,7 @@ void DirectX_Render::InitPipeline(void)
 
 void DirectX_Render::Update(void)
 {
+
 		//Keep the cubes rotating
 		rot += .0005f;
 		if (rot > 6.26f)
