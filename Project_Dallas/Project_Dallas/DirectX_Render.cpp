@@ -130,9 +130,9 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	dev->CreateDepthStencilView(depthStencilBuffer, NULL, &depthStencilView);
 
 	//Set our Render Target
-	devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
+	//devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
 	// set the render target as the back buffer
-	//devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
 
 
 	// Set the viewport

@@ -86,6 +86,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 				break;
 		}
 		dx.RenderFrame();
+		dx.Update();
 	}
 	// clean up dx
 	dx.CleanD3D();
