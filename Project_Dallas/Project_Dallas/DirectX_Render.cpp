@@ -69,6 +69,55 @@ void DirectX_Render::Update(void)
 
 		//Set cube2's world space matrix
 		//cube2World = Rotation * Scale;
+
+		UpdateCamera(1.0f, 0.75f);
+}
+
+void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
+{
+	
+	if (GetAsyncKeyState('W'))
+	{
+		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, moveSpd * .001);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
+	if (GetAsyncKeyState('S'))
+	{
+		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, -moveSpd * .001);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
+	if (GetAsyncKeyState('A'))
+	{
+		XMMATRIX translation = XMMatrixTranslation(-moveSpd * .001, 0.0f, 0.0f);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
+	if (GetAsyncKeyState('D'))
+	{
+		XMMATRIX translation = XMMatrixTranslation(moveSpd * .001, 0.0f, 0.0f);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
+	if (GetAsyncKeyState('X'))
+	{
+		XMMATRIX translation = XMMatrixTranslation(0.0f, -moveSpd * .001, 0.0f);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
+	if (GetAsyncKeyState(VK_SPACE))
+	{
+		XMMATRIX translation = XMMatrixTranslation(0.0f, moveSpd * .001, 0.0f);
+		XMMATRIX temp_camera = camView;
+		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
+		camView = result;
+	}
 }
 
 void DirectX_Render::InitD3D(HWND hWnd)
