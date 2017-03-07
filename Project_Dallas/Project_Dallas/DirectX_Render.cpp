@@ -55,19 +55,19 @@ void DirectX_Render::Update(void)
 		XMVECTOR rotaxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 		Rotation = XMMatrixRotationAxis(rotaxis, rot);
 		Translation = XMMatrixTranslation(0.0f, 0.0f, 4.0f);
+		Scale = XMMatrixScaling(3.3f, 3.3f, 1.3f);
 
 		//Set cube1's world space using the transformations
-		cube1World = Translation * Rotation;
+		cube1World = Translation * Scale * Rotation;
 
 		//Reset cube2World
 		cube2World = XMMatrixIdentity();
 
 		//Define cube2's world space matrix
 		Rotation = XMMatrixRotationAxis(rotaxis, -rot);
-		Scale = XMMatrixScaling(1.3f, 1.3f, 1.3f);
 
 		//Set cube2's world space matrix
-		cube2World = Rotation * Scale;
+		//cube2World = Rotation * Scale;
 }
 
 void DirectX_Render::InitD3D(HWND hWnd)
@@ -218,14 +218,6 @@ void DirectX_Render::RenderFrame(void)
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
 	//Draw the first cube
-	devcon->DrawIndexed(36, 0, 0);
-
-	WVP = cube2World * camView * camProjection;
-	cbPerObj.WVP = XMMatrixTranspose(WVP);
-	devcon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
-	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-
-	//Draw the second cube
 	devcon->DrawIndexed(36, 0, 0);
 
 	// switch the back buffer and the front buffer

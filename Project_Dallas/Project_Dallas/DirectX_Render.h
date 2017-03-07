@@ -7,6 +7,7 @@
 #include <math.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+
 using namespace DirectX;
 
 //#include <D3DX11async.h>
