@@ -11,10 +11,10 @@ Model::~Model()
 {
 }
 
-bool Model::LoadFromFile(const char* _path)
+bool Model::LoadFromFile(const char* filename)
 {
 	ifstream reader;
-	reader.open(_path);
+	reader.open(filename);
 	if (reader.is_open())
 	{
 		vector<XMFLOAT4> verts;

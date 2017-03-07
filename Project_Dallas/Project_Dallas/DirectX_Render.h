@@ -9,7 +9,6 @@
 #include <DirectXMath.h>
 using namespace DirectX;
 
-//#include <D3DX11async.h>
 
 // define the screen resolution
 #define SCREEN_WIDTH  800
@@ -82,6 +81,7 @@ public:
 	void InitGraphics(void);    // creates the shape to render
 	void InitPipeline(void);    // loads and prepares the shaders
 	void Update(void);
+	void UpdateCamera(float const moveSpd, float rotSpd);
 };
 
 
