@@ -70,7 +70,7 @@ void DirectX_Render::Update(void)
 		//Set cube2's world space matrix
 		//cube2World = Rotation * Scale;
 
-		UpdateCamera(1.0f, 0.75f);
+		UpdateCamera(1.0f, 1.0f);
 }
 
 void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
@@ -118,6 +118,59 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
 		camView = result;
 	}
+
+	//Mouse input
+
+	bool test = false;
+	if ((GetKeyState(VK_RBUTTON) & 0x100) != 0)
+	{
+		GetCursorPos(&m_currMousePos);
+		if (m_prevMousePos.x != NULL && m_prevMousePos.y != NULL)
+		{
+			if (abs(m_currMousePos.x - m_prevMousePos.x) > 0 && abs(m_currMousePos.y - m_prevMousePos.y) > 0)
+			{
+				test = true;
+
+				float dx = m_currMousePos.x - m_prevMousePos.x;
+				float dy = m_currMousePos.y - m_prevMousePos.y;
+
+				XMFLOAT4X4 m_camera;
+				XMStoreFloat4x4(&m_camera, camView);
+				XMFLOAT4 pos = XMFLOAT4(m_camera._41, m_camera._42, m_camera._43, m_camera._44);
+
+				m_camera._41 = 0;
+				m_camera._42 = 0;
+				m_camera._43 = 0;
+
+				XMMATRIX rotX = XMMatrixRotationX(dy * rotSpd * delta_time);
+				XMMATRIX rotY = XMMatrixRotationY(dx * rotSpd * delta_time);
+
+				XMMATRIX temp_camera = XMLoadFloat4x4(&m_camera);
+				temp_camera = XMMatrixMultiply(rotX, XMMatrixInverse(nullptr, temp_camera));
+				temp_camera = XMMatrixMultiply(XMMatrixInverse(nullptr, temp_camera), rotY);
+
+				XMStoreFloat4x4(&m_camera, temp_camera);
+
+
+				m_camera._41 = pos.x;
+				m_camera._42 = pos.y;
+				m_camera._43 = pos.z;
+
+				camView = XMLoadFloat4x4(&m_camera);
+			}
+		}
+		
+		m_prevMousePos = m_currMousePos;		
+	}
+	
+	else
+	{
+		m_prevMousePos.x = NULL;
+		m_prevMousePos.y = NULL;
+
+	}
+
+
 }
 
 void DirectX_Render::InitD3D(HWND hWnd)

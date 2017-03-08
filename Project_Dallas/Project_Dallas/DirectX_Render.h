@@ -35,6 +35,7 @@ private:
 	XMMATRIX Rotation;
 	XMMATRIX Scale;
 	XMMATRIX Translation;
+	float delta_time = .001f;
 	float rot = 0.01f;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11Texture2D* depthStencilBuffer;
@@ -57,6 +58,9 @@ private:
 	XMVECTOR camPosition;
 	XMVECTOR camTarget;
 	XMVECTOR camUp;
+
+	POINT m_currMousePos;
+	POINT m_prevMousePos;
 
 	struct cbPerObject
 	{
