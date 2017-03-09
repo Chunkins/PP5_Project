@@ -8,7 +8,11 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
+//#include <MyFBXexporter.h>
+#include "MyFBXexporter.h"
+
 using namespace DirectX;
+//using namespace ;
 
 
 // define the screen resolution

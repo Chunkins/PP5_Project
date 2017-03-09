@@ -287,6 +287,7 @@ namespace FBXImport
 		bool bSuccess = importer->Initialize(_filePath, -1, fbx.fbxManager->GetIOSettings());
 		if (!bSuccess) return E_FAIL;
 
+		
 		bSuccess = importer->Import(fbx.fbxScene);
 		if (!bSuccess) return E_FAIL;
 
@@ -374,7 +375,7 @@ namespace FBXImport
 				}
 			}
 		}
-
+		
 		_fbx = fbx;
 		return S_OK;
 	}

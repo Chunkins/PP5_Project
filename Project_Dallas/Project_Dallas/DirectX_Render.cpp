@@ -4,6 +4,7 @@
 
 DirectX_Render::DirectX_Render()
 {
+	
 }
 
 
@@ -20,7 +21,7 @@ void DirectX_Render::InitPipeline(void)
 	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "PShader", "ps_4_0", 0, 0, &PS, NULL);
 
 
-
+	
 
 	// encapsulate both shaders into shader objects
 	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
