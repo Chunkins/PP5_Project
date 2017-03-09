@@ -74,8 +74,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files\Autodesk\FBX\FBX SDK\2017.1\lib\vs2015\x64\debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\FBX_Exporter\2017.1\include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\FBX_Exporter\2017.1\lib\vs2015\x64\debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -106,12 +106,12 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>d3dx11tex.h;C:\Program Files\Autodesk\FBX\FBX SDK\2017.1\include;C:\Users\hunki\Desktop\PP5_Project\fbxImporter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\FBX_Exporter\2017.1\include;..\..\FBX_Exporter;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>fbxImporter.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -165,15 +165,14 @@
     <ClInclude Include="DirectX_Render.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="modelclass.h" />
-    <ClInclude Include="MyFBXexporter.h" />
     <ClInclude Include="textureclass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders.shader" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\fbxImporter\fbxImporter\fbxImporter.vcxproj">
-      <Project>{3a29ab64-e28d-4f45-8fa6-e8098905831e}</Project>
+    <ProjectReference Include="..\..\FBX_Exporter\FBX_Exporter.vcxproj">
+      <Project>{c8d7762a-6735-4389-86cf-bc36cf15339d}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,4 +1,7 @@
 #include "DirectX_Render.h"
+#include <fstream>
+
+int sizeOfIndices;
 
 
 
@@ -21,7 +24,6 @@ void DirectX_Render::InitPipeline(void)
 	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "PShader", "ps_4_0", 0, 0, &PS, NULL);
 
 
-	
 
 	// encapsulate both shaders into shader objects
 	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
@@ -47,7 +49,7 @@ void DirectX_Render::Update(void)
 
 		//Keep the cubes rotating
 		rot += .0005f;
-		if (rot > 6.26f)
+		if (rot > 6.28f)
 			rot = 0.0f;
 
 		//Reset cube1World
@@ -57,7 +59,7 @@ void DirectX_Render::Update(void)
 		XMVECTOR rotaxis = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 		Rotation = XMMatrixRotationAxis(rotaxis, rot);
 		Translation = XMMatrixTranslation(0.0f, -3.0f, 0.8f);
-		Scale = XMMatrixScaling(6.3f, 1.3f, 6.3f);
+		Scale = XMMatrixScaling(1.f, 1.f, 1.3f);
 
 		//Set cube1's world space using the transformations
 		cube1World = Translation * Scale;
@@ -273,10 +275,11 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	camView = XMMatrixLookAtLH(camPosition, camTarget, camUp);
 
 	//Set the Projection matrix
-	camProjection = XMMatrixPerspectiveFovLH(0.4f*3.14f, SCREEN_WIDTH / SCREEN_HEIGHT, 1.0f, 1000.0f);
+	camProjection = XMMatrixPerspectiveFovLH(70*3.14/180, SCREEN_WIDTH/SCREEN_HEIGHT, 1.0f, 1000.0f);
 
 	InitPipeline();
 	InitGraphics();
+	
 }
 
 void DirectX_Render::CleanD3D(void)
@@ -294,7 +297,7 @@ void DirectX_Render::CleanD3D(void)
 
 	dev->Release();
 	devcon->Release();
-	squareIndexBuffer->Release();
+	//squareIndexBuffer->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 }
@@ -322,7 +325,7 @@ void DirectX_Render::RenderFrame(void)
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 
 	//Draw the first cube
-	devcon->DrawIndexed(36, 0, 0);
+	devcon->Draw(sizeOfIndices, 0);
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
@@ -331,64 +334,48 @@ void DirectX_Render::RenderFrame(void)
 void DirectX_Render::InitGraphics(void)
 {
 
+	EXP::DLLTransit tmp;
+	DWORD somesdfasd = 300;
+	TCHAR theAnswer[300];
+	GetCurrentDirectory(somesdfasd, theAnswer);
+	tmp.saveFiletoBin("../Bone.fbx", "../Bone.txt");
+	std::vector<VertexInfo> kindaTMP;
+	Animation anime;
+	std::vector<BoneInfo> bonevec;
+	tmp.loadFilefromBin("../Bone.txt", kindaTMP, bonevec, &anime);
 
 	// create a triangle using the VERTEX struct
+	sizeOfIndices = kindaTMP.size();
 
-	VERTEX OurVertices[] =
+	VERTEX* OurVertices = new VERTEX[sizeOfIndices];
+	unsigned i = UINT32_MAX; while (++i!= sizeOfIndices)
 	{
-		{ -1.0f, -1.0f, -1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ -1.0f,  1.0f, -1.0f,{ 0.0f, 0.0f, 0.0f, 1.0f } },
-		{ 1.0f,  1.0f, -1.0f,{ 0.0f, 0.0f, 0.0f, 1.0f } },
-		{ 1.0f, -1.0f, -1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ -1.0f, -1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ -1.0f, 1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ 1.0f, 1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
-		{ 1.0f, -1.0f, 1.0f,{ 1.0f, 1.0f, 1.0f, 1.0f } },
+		OurVertices[i].X = kindaTMP[i].vert.x;
+		OurVertices[i].Y = kindaTMP[i].vert.y;
+		OurVertices[i].Z = kindaTMP[i].vert.z;
+	}
 
+	//DWORD* indices = new DWORD[sizeOfIndices];
+	//i = UINT32_MAX; while (++i != sizeOfIndices)
+	//{
+	//	indices[i] = i;
+	//}
 
-	};
-
-	DWORD indices[] = {
-		// front face
-		0, 1, 2,
-		0, 2, 3,
-
-		// back face
-		4, 6, 5,
-		4, 7, 6,
-
-		// left face
-		4, 5, 1,
-		4, 1, 0,
-
-		// right face
-		3, 2, 6,
-		3, 6, 7,
-
-		// top face
-		1, 5, 6,
-		1, 6, 2,
-
-		// bottom face
-		4, 0, 3,
-		4, 3, 7
-	};
-
-	D3D11_BUFFER_DESC indexBufferDesc;
-	ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-
-	indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	indexBufferDesc.ByteWidth = sizeof(DWORD) * 12 * 3;
-	indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	indexBufferDesc.CPUAccessFlags = 0;
-	indexBufferDesc.MiscFlags = 0;
-
-	D3D11_SUBRESOURCE_DATA iinitData;
-
-	iinitData.pSysMem = indices;
-	dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
-
-	devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	//D3D11_BUFFER_DESC indexBufferDesc;
+	//ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
+	//
+	//indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	//indexBufferDesc.ByteWidth = sizeof(DWORD) *sizeOfIndices;
+	//indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	//indexBufferDesc.CPUAccessFlags = 0;
+	//indexBufferDesc.MiscFlags = 0;
+	//
+	//D3D11_SUBRESOURCE_DATA iinitData;
+	//
+	//iinitData.pSysMem = indices;
+	//dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
+	//
+	//devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
 
 	// create the vertex buffer
@@ -396,7 +383,7 @@ void DirectX_Render::InitGraphics(void)
 	ZeroMemory(&bd, sizeof(bd));
 
 	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(VERTEX) * 8;             // size is the VERTEX struct * 3
+	bd.ByteWidth = sizeof(VERTEX) * sizeOfIndices;             // size is the VERTEX struct * 3
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
 
@@ -413,6 +400,8 @@ void DirectX_Render::InitGraphics(void)
 	//devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
 	//memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
 	//devcon->Unmap(pVBuffer, NULL);
+	delete[] OurVertices;
+	//delete[] indices;
 }
 
 

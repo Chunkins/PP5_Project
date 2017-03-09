@@ -6,21 +6,44 @@
 #include <d3d11.h>
 #include <math.h>
 #include <d3dcompiler.h>
+#include <fbxsdk.h>
+#include "DLLTransit.h"
+#include <vector>
 #include <DirectXMath.h>
 
-//#include <MyFBXexporter.h>
-#include "MyFBXexporter.h"
 
 using namespace DirectX;
 //using namespace ;
 
 
 // define the screen resolution
-#define SCREEN_WIDTH  800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH  800.f
+#define SCREEN_HEIGHT 600.f
 // include the Direct3D Library file
 #pragma comment (lib, "D3DCompiler.lib")
 #pragma comment (lib, "d3d11.lib")
+//struct VertInfo
+//{
+//	unsigned int numIndicies;
+//	std::vector<float> blendWeight;
+//	std::vector<int> boneIndices;
+//
+//	Float3 vert;
+//	Float3 norm;
+//	Float2 uv;
+//
+//};
+//struct BoneInfo
+//{
+//	int index;
+//	int parentIndex;
+//	BoneInfo * Parent;
+//	Float4x4 transform;
+//
+//	std::vector<BoneInfo*> children;
+//	std::vector<KeyFrame*>* keyframes;
+//};
+
 struct VERTEX {
 	float x;
 	float y;
