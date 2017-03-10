@@ -1,8 +1,6 @@
 #include "DLLTransit.h"
 #include "FBXExport.h"
 
-//FBXExport fbxObject;
-
 
 void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileName)
 {
@@ -16,7 +14,6 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 	FbxNode* tmpNode = tmpScene->GetRootNode();
 
 	exporter->InitFBX();
-//	exporter->ExportFBX();
 
 	int tmpNodeCount = tmpScene->GetNodeCount();
 
@@ -26,16 +23,9 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 	std::vector<PNTIWVertex> SendData = exporter->getverts();
 	std::vector<Joint> bone = exporter->getSkeleton().mJoints;
 
-//	bone[0].mAnimation->
-	
 	int vertSize = (int)exporter->getverts().size();
 	
 	std::ofstream outbinFile(binFileName, std::ios::binary);
-	//outbinFile.open("fbx.bin", std::ios::binary);
-
-	/////// Tmp numbers //
-
-
 
 	if (outbinFile.is_open())
 	{
@@ -44,10 +34,8 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 		for (int i = 0; i < vertSize; i++)
 		{
 			VertexInfo toReturn;
-			// 1. Number of Weights and Indicies
 			toReturn.numIndicies = SendData[i].mVertexBlendingInfos.size();
 			outbinFile.write((char*)&toReturn.numIndicies, sizeof(unsigned int));
-			// 2 Store all weights and Indicies
 			for (size_t j = 0; j < toReturn.numIndicies; j++)
 			{
 				toReturn.blendWeights.push_back((float)SendData[i].mVertexBlendingInfos[j].mBlendingWeight);
@@ -60,9 +48,9 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 			}
 			
 			//	Float3 vert;
-			toReturn.vert.x = SendData[i].mPosition.x;
-			toReturn.vert.y = SendData[i].mPosition.y;
-			toReturn.vert.z = SendData[i].mPosition.z;
+			toReturn.pos.x = SendData[i].mPosition.x;
+			toReturn.pos.y = SendData[i].mPosition.y;
+			toReturn.pos.z = SendData[i].mPosition.z;
 
 		
 			//	Float3 norm;
@@ -74,7 +62,7 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 			toReturn.uv.u = SendData[i].mUV.x;
 			toReturn.uv.v = SendData[i].mUV.y;
 
-			outbinFile.write((char*)&toReturn.vert, sizeof(Float3));
+			outbinFile.write((char*)&toReturn.pos, sizeof(Float3));
 			outbinFile.write((char*)&toReturn.norm, sizeof(Float3));
 			outbinFile.write((char*)&toReturn.uv, sizeof(Float2));
 		}
@@ -99,7 +87,6 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 			}
 			outbinFile.write((char*)&invMatrixStuff, sizeof(Float4x4));
 
-		//	unsigned int numKeyFrames = bone[i].mAnimation->;
 			Keyframe *walk = bone[i].mAnimation;
 			int numKeyframes = 0;
 			while (walk)
@@ -131,14 +118,10 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 
 		outbinFile.close();
 	}
-//	delete exporter;
 }
 
 void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation* animation)
 {
-//	std::vector<BoneInfo> bone;
-
-
 //	VertexInfo
 	VertexInfo pushData;
 	std::ifstream inbinFile;
@@ -150,14 +133,8 @@ void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<Vertex
 
 	for (size_t i = 0; i < sizeOfFile; i++)
 	{
-
-	//}
-	//while (!inbinFile.eof())
-	//{
 		VertexInfo toReturn;
-	//	unsigned int sizeofweights;
 		inbinFile.read((char*)&toReturn.numIndicies, sizeof(unsigned int));
-	//	std::vector<float> blendWeights;
 
 		for (size_t j = 0; j < toReturn.numIndicies; j++)
 		{
@@ -173,7 +150,7 @@ void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<Vertex
 		}
 
 	//	Float3 vert;
-		inbinFile.read((char*)&toReturn.vert, sizeof(Float3));
+		inbinFile.read((char*)&toReturn.pos, sizeof(Float3));
 	//	Float3 norm;
 		inbinFile.read((char*)&toReturn.norm, sizeof(Float3));
 	//	Float2 uv;
@@ -183,7 +160,6 @@ void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<Vertex
 		returnData.push_back(toReturn);
 		
 	}
-	// Loading Bone Data
 
 	// reading in the bones
 	unsigned int numBones;

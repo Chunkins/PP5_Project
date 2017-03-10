@@ -387,33 +387,10 @@ void DirectX_Render::InitGraphics(void)
 	VERTEX* OurVertices = new VERTEX[sizeOfIndices];
 	unsigned i = UINT32_MAX; while (++i!= sizeOfIndices)
 	{
-		OurVertices[i].X = kindaTMP[i].vert.x;
-		OurVertices[i].Y = kindaTMP[i].vert.y;
-		OurVertices[i].Z = kindaTMP[i].vert.z;
+		OurVertices[i].X = kindaTMP[i].pos.x;
+		OurVertices[i].Y = kindaTMP[i].pos.y;
+		OurVertices[i].Z = kindaTMP[i].pos.z;
 	}
-
-	//DWORD* indices = new DWORD[sizeOfIndices];
-	//i = UINT32_MAX; while (++i != sizeOfIndices)
-	//{
-	//	indices[i] = i;
-	//}
-
-	//D3D11_BUFFER_DESC indexBufferDesc;
-	//ZeroMemory(&indexBufferDesc, sizeof(indexBufferDesc));
-	//
-	//indexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-	//indexBufferDesc.ByteWidth = sizeof(DWORD) *sizeOfIndices;
-	//indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	//indexBufferDesc.CPUAccessFlags = 0;
-	//indexBufferDesc.MiscFlags = 0;
-	//
-	//D3D11_SUBRESOURCE_DATA iinitData;
-	//
-	//iinitData.pSysMem = indices;
-	//dev->CreateBuffer(&indexBufferDesc, &iinitData, &squareIndexBuffer);
-	//
-	//devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
 
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;

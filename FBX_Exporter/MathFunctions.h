@@ -43,7 +43,7 @@ public:
 class Material
 {
 public:
-	std::string mName;
+	std::string m_Name;
 	DirectX::XMFLOAT3 mAmbient;
 	DirectX::XMFLOAT3 mDiffuse;
 	DirectX::XMFLOAT3 mEmissive;
@@ -161,10 +161,8 @@ struct PNTIWVertex
 	{
 		bool sameBlendingInfo = true;
 
-		// We only compare the blending info when there is blending info
 		if (!(mVertexBlendingInfos.empty() && rhs.mVertexBlendingInfos.empty()))
 		{
-			// Each vertex should only have 4 index-weight blending info pairs
 			for (unsigned int i = 0; i < 4; ++i)
 			{
 				if (mVertexBlendingInfos[i].mBlendingIndex != rhs.mVertexBlendingInfos[i].mBlendingIndex ||
@@ -184,8 +182,7 @@ struct PNTIWVertex
 	}
 };
 
-///////////////
-// Utilities //
+// Utility
 struct BlendingIndexWeightPair
 {
 	unsigned int mBlendingIndex;
@@ -197,14 +194,7 @@ struct BlendingIndexWeightPair
 	{}
 };
 
-// Each Control Point in FBX is basically a vertex
-// in the physical world. For example, a cube has 8
-// vertices(Control Points) in FBX
-// Joints are associated with Control Points in FBX
-// The mapping is one joint corresponding to 4
-// Control Points(Reverse of what is done in a game engine)
-// As a result, this struct stores a XMFLOAT3 and a 
-// vector of joint indices
+
 struct CtrlPoint
 {
 	DirectX::XMFLOAT3 mPosition;
@@ -216,9 +206,6 @@ struct CtrlPoint
 	}
 };
 
-// This stores the information of each key frame of each joint
-// This is a linked list and each node is a snapshot of the
-// global transformation of the joint at a certain frame
 struct Keyframe
 {
 	FbxLongLong mFrameNum;
@@ -231,7 +218,6 @@ struct Keyframe
 	{}
 };
 
-// This is the actual representation of a joint in a game engine
 struct Joint
 {
 	std::string mName;

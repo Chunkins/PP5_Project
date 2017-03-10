@@ -29,61 +29,41 @@ bool FBXExport::Initialize()
 
 bool FBXExport::LoadScene(const char* inFileName, const char* inOutputPath)
 {
-//	LARGE_INTEGER start;
-//	LARGE_INTEGER end;
 	mInputFilePath = inFileName;
 	mOutputFilePath = inOutputPath;
 
-//	QueryPerformanceCounter(&start);
 	FbxImporter* fbxImporter = FbxImporter::Create(mFBXManager, "myImporter");
 
-	if (!fbxImporter)
-	{
+	if (!fbxImporter)	
 		return false;
-	}
+	
 
 	if (!fbxImporter->Initialize(inFileName, -1, mFBXManager->GetIOSettings()))
-	{
 		return false;
-	}
+	
 
 	if (!fbxImporter->Import(mFBXScene))
-	{
 		return false;
-	}
+	
 	fbxImporter->Destroy();
-//	QueryPerformanceCounter(&end);
-//	std::cout << "Loading FBX File: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
 	return true;
 }
 bool FBXExport::LoadScene(const char* inFileName)
 {
-//	LARGE_INTEGER start;
-//	LARGE_INTEGER end;
 	mInputFilePath = inFileName;
-//	mOutputFilePath = inOutputPath;
 
-//	QueryPerformanceCounter(&start);
 	FbxImporter* fbxImporter = FbxImporter::Create(mFBXManager, "myImporter");
 
 	if (!fbxImporter)
-	{
 		return false;
-	}
 
 	if (!fbxImporter->Initialize(inFileName, -1, mFBXManager->GetIOSettings()))
-	{
 		return false;
-	}
 
 	if (!fbxImporter->Import(mFBXScene))
-	{
 		return false;
-	}
 	fbxImporter->Destroy();
-//	QueryPerformanceCounter(&end);
-//	std::cout << "Loading FBX File: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
 	return true;
 }
@@ -96,43 +76,23 @@ void FBXExport::InitFBX()
 		mHasAnimation = false;
 	}
 	ProcessGeometry(mFBXScene->GetRootNode());
-//	Optimize();
 }
 
 
 void FBXExport::ExportFBX()
 {
-//	LARGE_INTEGER start;
-//	LARGE_INTEGER end;
-
-	// Get the clean name of the model
 	std::string genericFileName = Utilities::GetFileName(mInputFilePath);
 	genericFileName = Utilities::RemoveSuffix(genericFileName);
 
-//	QueryPerformanceCounter(&start);
 	ProcessSkeletonHierarchy(mFBXScene->GetRootNode());
 	if (mSkeleton.mJoints.empty())
 	{
 		mHasAnimation = false;
 	}
 
-//	std::cout << "\n\n\n\nExporting Model:" << genericFileName << "\n";
-//	QueryPerformanceCounter(&end);
-//	std::cout << "Processing Skeleton Hierarchy: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
-
-//	QueryPerformanceCounter(&start);
 	ProcessGeometry(mFBXScene->GetRootNode());
-//	QueryPerformanceCounter(&end);
-//	std::cout << "Processing Geometry: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
 
-//	QueryPerformanceCounter(&start);
 	Optimize();
-//	QueryPerformanceCounter(&end);
-//	std::cout << "Optimization: " << ((end.QuadPart - start.QuadPart) / static_cast<float>(mCPUFreq.QuadPart)) << "s\n";
-	//PrintMaterial();
-//	std::cout << "\n\n";
-
-
 
 	std::string outputMeshName = mOutputFilePath + genericFileName + ".itpmesh";
 	std::ofstream meshOutput(outputMeshName);
@@ -144,7 +104,6 @@ void FBXExport::ExportFBX()
 		std::ofstream animOutput(outputNnimName);
 		WriteAnimationToStream(animOutput);
 	}
-//	CleanupFbxManager();
 	std::cout << "\n\nExport Done!\n";
 }
 
@@ -231,20 +190,10 @@ void FBXExport::ProcessJointsAndAnimations(FbxNode* inNode)
 {
 	FbxMesh* currMesh = inNode->GetMesh();
 	unsigned int numOfDeformers = currMesh->GetDeformerCount();
-	// This geometry transform is something I cannot understand
-	// I think it is from MotionBuilder
-	// If you are using Maya for your models, 99% this is just an
-	// identity matrix
-	// But I am taking it into account anyways......
 	FbxAMatrix geometryTransform = Utilities::GetGeometryTransformation(inNode);
 
-	// A deformer is a FBX thing, which contains some clusters
-	// A cluster contains a link, which is basically a joint
-	// Normally, there is only one deformer in a mesh
 	for (unsigned int deformerIndex = 0; deformerIndex < numOfDeformers; ++deformerIndex)
 	{
-		// There are many types of deformers in Maya,
-		// We are using only skins, so we see if this is a skin
 		FbxSkin* currSkin = reinterpret_cast<FbxSkin*>(currMesh->GetDeformer(deformerIndex, FbxDeformer::eSkin));
 		if (!currSkin)
 		{
@@ -261,15 +210,13 @@ void FBXExport::ProcessJointsAndAnimations(FbxNode* inNode)
 			FbxAMatrix transformLinkMatrix;
 			FbxAMatrix globalBindposeInverseMatrix;
 
-			currCluster->GetTransformMatrix(transformMatrix);	// The transformation of the mesh at binding time
-			currCluster->GetTransformLinkMatrix(transformLinkMatrix);	// The transformation of the cluster(joint) at binding time from joint space to world space
+			currCluster->GetTransformMatrix(transformMatrix);	
+			currCluster->GetTransformLinkMatrix(transformLinkMatrix);	
 			globalBindposeInverseMatrix = transformLinkMatrix.Inverse() * transformMatrix * geometryTransform;
 
-			// Update the information in mSkeleton 
 			mSkeleton.mJoints[currJointIndex].mGlobalBindposeInverse = globalBindposeInverseMatrix;
 			mSkeleton.mJoints[currJointIndex].mNode = currCluster->GetLink();
 
-			// Associate each joint with the control points it affects
 			unsigned int numOfIndices = currCluster->GetControlPointIndicesCount();
 			for (unsigned int i = 0; i < numOfIndices; ++i)
 			{
@@ -279,8 +226,6 @@ void FBXExport::ProcessJointsAndAnimations(FbxNode* inNode)
 				mControlPoints[currCluster->GetControlPointIndices()[i]]->mBlendingInfo.push_back(currBlendingIndexWeightPair);
 			}
 
-			// Get animation information
-			// Now only supports one take
 			FbxAnimStack* currAnimStack = mFBXScene->GetSrcObject<FbxAnimStack>(0);
 			FbxString animStackName = currAnimStack->GetName();
 			mAnimationName = animStackName.Buffer();
@@ -304,21 +249,6 @@ void FBXExport::ProcessJointsAndAnimations(FbxNode* inNode)
 			}
 		}
 	}
-
-	// Some of the control points only have less than 4 joints
-	// affecting them.
-	// For a normal renderer, there are usually 4 joints
-	// I am adding more dummy joints if there isn't enough
-//	BlendingIndexWeightPair currBlendingIndexWeightPair;
-//	currBlendingIndexWeightPair.mBlendingIndex = 0;
-//	currBlendingIndexWeightPair.mBlendingWeight = 0;
-//	for (auto itr = mControlPoints.begin(); itr != mControlPoints.end(); ++itr)
-//	{
-//		for (unsigned int i = itr->second->mBlendingInfo.size(); i <= 4; ++i)
-//		{
-//			itr->second->mBlendingInfo.push_back(currBlendingIndexWeightPair);
-//		}
-//	}
 }
 
 unsigned int FBXExport::FindJointIndexUsingName(const std::string& inJointName)
@@ -337,7 +267,6 @@ unsigned int FBXExport::FindJointIndexUsingName(const std::string& inJointName)
 
 void FBXExport::ProcessMesh(FbxNode* inNode)
 {
-	// we came to far
 	FbxMesh* currMesh = inNode->GetMesh();
 
 	if (currMesh == nullptr)
@@ -370,7 +299,6 @@ void FBXExport::ProcessMesh(FbxNode* inNode)
 
 
 			ReadNormal(currMesh, ctrlPointIndex, vertexCounter, normal[j]);
-			// We only have diffuse texture
 			for (int k = 0; k < 1; ++k)
 			{
 				ReadUV(currMesh, ctrlPointIndex, currMesh->GetTextureUVIndex(i, j), k, UV[j][k]);
@@ -381,7 +309,6 @@ void FBXExport::ProcessMesh(FbxNode* inNode)
 			temp.mPosition = currCtrlPoint->mPosition;
 			temp.mNormal = normal[j];
 			temp.mUV = UV[j][0];
-			// Copy the blending info from each control point
 			for (unsigned int i = 0; i < currCtrlPoint->mBlendingInfo.size(); ++i)
 			{
 				VertexBlendingInfo currBlendingInfo;
@@ -389,8 +316,6 @@ void FBXExport::ProcessMesh(FbxNode* inNode)
 				currBlendingInfo.mBlendingWeight = currCtrlPoint->mBlendingInfo[i].mBlendingWeight;
 				temp.mVertexBlendingInfos.push_back(currBlendingInfo);
 			}
-			// Sort the blending info so that later we can remove
-			// duplicated vertices
 			temp.SortBlendingInfoByWeight();
 
 			mVertices.push_back(temp);
@@ -399,8 +324,6 @@ void FBXExport::ProcessMesh(FbxNode* inNode)
 		}
 	}
 
-	// Now mControlPoints has served its purpose
-	// We can free its memory
 	for (auto itr = mControlPoints.begin(); itr != mControlPoints.end(); ++itr)
 	{
 		delete itr->second;
@@ -645,19 +568,13 @@ void FBXExport::ReadTangent(FbxMesh* inMesh, int inCtrlPointIndex, int inVertexC
 	}
 }
 
-// This function removes the duplicated vertices and
-// adjust the index buffer properly
-// This function should take a while, though........
 void FBXExport::Optimize()
 {
-	// First get a list of unique vertices
 	std::vector<PNTIWVertex> uniqueVertices;
 	for (unsigned int i = 0; i < mTriangles.size(); ++i)
 	{
 		for (unsigned int j = 0; j < 3; ++j)
 		{
-			// If current vertex has not been added to
-			// our unique vertex list, then we add it
 			if (FindVertex(mVertices[i * 3 + j], uniqueVertices) == -1)
 			{
 				uniqueVertices.push_back(mVertices[i * 3 + j]);
@@ -665,7 +582,6 @@ void FBXExport::Optimize()
 		}
 	}
 
-	// Now we update the index buffer
 	for (unsigned int i = 0; i < mTriangles.size(); ++i)
 	{
 		for (unsigned int j = 0; j < 3; ++j)
@@ -678,8 +594,6 @@ void FBXExport::Optimize()
 	mVertices = uniqueVertices;
 	uniqueVertices.clear();
 
-	// Now we sort the triangles by materials to reduce 
-	// shader's workload
 	std::sort(mTriangles.begin(), mTriangles.end());
 }
 
@@ -695,45 +609,6 @@ int FBXExport::FindVertex(const PNTIWVertex& inTargetVertex, const std::vector<P
 
 	return -1;
 }
-
-/*
-void FBXExporter::ReduceVertices()
-{
-CleanupFbxManager();
-std::vector<Vertex::PNTVertex> newVertices;
-for (unsigned int i = 0; i < mVertices.size(); ++i)
-{
-int index = FindVertex(mVertices[i], newVertices);
-if (index == -1)
-{
-mIndexBuffer[i] = newVertices.size();
-newVertices.push_back(mVertices[i]);
-}
-else
-{
-mIndexBuffer[i] = index;
-}
-}
-mVertices = newVertices;
-}
-*/
-
-/*
-int FBXExporter::FindVertex(const Vertex::PNTVertex& inTarget, const std::vector<Vertex::PNTVertex>& inVertices)
-{
-int index = -1;
-for (unsigned int i = 0; i < inVertices.size(); ++i)
-{
-if (inTarget == inVertices[i])
-{
-index = i;
-}
-}
-return index;
-}
-*/
-
-
 
 void FBXExport::AssociateMaterialToMesh(FbxNode* inNode)
 {

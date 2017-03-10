@@ -68,9 +68,7 @@ struct Float4x4
 	float&      operator() (size_t Row, size_t Column) { return m[Row][Column]; }
 
 	Float4x4& operator= (const Float4x4& _Float4x4)
-	{
-	//	Float4x4 toReturn;
-		
+	{		
 		for (size_t i = 0; i < 4; i++)
 			for (size_t j = 0; j < 4; j++)
 				m[i][j] = _Float4x4.m[i][j];
@@ -78,36 +76,31 @@ struct Float4x4
 	}
 };
 
-struct KeyFrame
-{
-	float keyTime;
-	Float4x4 transform;
-};
 struct VertexInfo
 {
 	unsigned int numIndicies;
 	std::vector<float> blendWeights;
 	std::vector<int> boneIndices;
 
-	//	unsigned int CtrlPntIndeics;
-
-	Float3 vert;
+	Float3 pos;
 	Float3 norm;
 	Float2 uv;
-	//	Bone bones;
 };
-
+struct KeyFrame
+{
+	float keyTime;
+	Float4x4 transform;
+};
 struct BoneInfo
 {
 	int index;
 	int parentIndex;
-	BoneInfo *Parent;
+	BoneInfo *parent;
 	Float4x4 transform;
 
 	std::vector<BoneInfo*> children;
 	std::vector<KeyFrame*>* keyframes;
 };
-
 struct Animation
 {
 	float _time;
@@ -115,17 +108,13 @@ struct Animation
 };
 
 
+
+
 namespace EXP
 {
 	class DLLEXPORT1 DLLTransit
 	{
-	private:
-		/*bool LoadScene(const char* inFileName, const char* inOutputPath);
-		bool LoadScene(const char* inFileName);*/
-		//		void getVerticies(std::vector<VertexInfo> &returnData, const char* inFileName);
 	public:
-
-		//		std::vector<VertexInfo> getVerticies(std::vector<VertexInfo> &returnData, const char* inFileName);
 		void saveFiletoBin(const char* inFileName, const char* binFileName);
 		void loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation* animation);
 
