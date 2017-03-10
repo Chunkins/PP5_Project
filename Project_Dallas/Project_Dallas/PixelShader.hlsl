@@ -16,5 +16,6 @@ float4 main(Input _pix) : SV_TARGET
 //textureColor = shaderTexture.Sample(SampleType, input.color.xy);
 //
 //return textureColor;
+	//return float4(0.f,0.f,1.0,0.f);
 	return _pix.color;
 }

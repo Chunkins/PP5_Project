@@ -162,6 +162,7 @@
   <ItemGroup>
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="DDSTextureLoader.h" />
+    <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="DirectX_Render.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="modelclass.h" />

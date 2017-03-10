@@ -27,6 +27,6 @@ Output main(Input _in)
 	float4 pos = _in.pos;
 	pos = mul(pos, WVP);
 	ret.pos = pos;
-	ret.color = float4(1, 1, 1, 1);
+	ret.color = _in.normal;
 	return ret;
 }

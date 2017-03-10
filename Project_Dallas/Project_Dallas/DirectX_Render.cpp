@@ -142,6 +142,11 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
 		camProjection = result;
 	}
+	if (GetAsyncKeyState('1') & 0x1)
+		DrawBOX = !DrawBOX;
+	if (GetAsyncKeyState('2') & 0x1)
+		DrawBone = !DrawBone;
+
 	if (GetAsyncKeyState(VK_SPACE))
 	{
 		XMMATRIX translation = XMMatrixTranslation(0.0f, moveSpd * .001, 0.0f);
@@ -259,6 +264,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
 
+
 	//Create the Depth/Stencil View
 	dev->CreateTexture2D(&depthStencilDesc, NULL, &depthStencilBuffer);
 	dev->CreateDepthStencilView(depthStencilBuffer, NULL, &depthStencilView);
@@ -266,6 +272,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	//Set our Render Target
 	//devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
 	// set the render target as the back buffer
+	
 	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
 
 
@@ -318,7 +325,6 @@ void DirectX_Render::CleanD3D(void)
 	pLayout->Release();
 	pVS->Release();
 	pPS->Release();
-	pVBuffer->Release();
 	swapchain->Release();
 	backbuffer->Release();
 	cbPerObjectBuffer->Release();
@@ -328,6 +334,7 @@ void DirectX_Render::CleanD3D(void)
 	//squareIndexBuffer->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
+
 }
 
 void DirectX_Render::RenderFrame(void)
@@ -337,8 +344,8 @@ void DirectX_Render::RenderFrame(void)
 	devcon->ClearRenderTargetView(backbuffer, color);
 	//Refresh the Depth/Stencil view
 	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	// do 3D rendering on the back buffer here
-	// select which vertex buffer to display
+	//*************************************************DELETE AFTER MILESTONE 1********************************************\\\
+	
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
 	devcon->VSSetShader(pVS, 0, 0);
@@ -360,14 +367,37 @@ void DirectX_Render::RenderFrame(void)
 	devcon->PSSetShaderResources(0, 1, pSRV);
 
 	devcon->PSSetSamplers(0, 1, m_sampler);
-	devcon->Draw(sizeOfIndices, 0);
+	if (DrawBOX)
+	{
+		devcon->Draw(sizeOfIndices, 0);
+	}
+	//*************************************************DELETE AFTER MILESTONE 1********************************************\\\
+
+	// set shaders
+	devcon->VSSetShader(pVS2, 0, 0);
+	devcon->PSSetShader(pPS2, 0, 0);
+	// select which primtive type we are using
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//I tried to change this to 2 and it didnt work
+	devcon->IASetInputLayout(pLayout);
+	//Draw the first cube
+	devcon->PSSetShaderResources(0, 1, pSRV);
+
+	devcon->PSSetSamplers(0, 1, m_sampler);
+	if (DrawBone)
+	{
+		Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, cube1World, true);
+	}
 
 	devcon->VSSetShader(pVS2, 0, 0);
 	devcon->PSSetShader(pPS2, 0, 0);
-	devcon->IASetInputLayout(pLayout2);
-	Plane.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+	devcon->IASetInputLayout(pLayout2);//cant get rid of tis for some reason
+	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
 
 
+	
+	//devcon->Draw(sizeOfIndices, 0);
 
 
 	// switch the back buffer and the front buffer
@@ -409,24 +439,23 @@ void DirectX_Render::InitGraphics(void)
 	sizeOfIndices = kindaTMP.size();
 
 	VERTEX* OurVertices = new VERTEX[sizeOfIndices];
-	unsigned i = UINT32_MAX; while (++i!= sizeOfIndices)
+	unsigned i = UINT32_MAX; while (++i != sizeOfIndices)
 	{
 		OurVertices[i].X = kindaTMP[i].pos.x;
 		OurVertices[i].Y = kindaTMP[i].pos.y;
 		OurVertices[i].Z = kindaTMP[i].pos.z;
 		OurVertices[i].Color[0] = kindaTMP[i].uv.u;
 		OurVertices[i].Color[1] = kindaTMP[i].uv.v;
-
 	}
 
 	// create the vertex buffer
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 
-	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+
 	bd.ByteWidth = sizeof(VERTEX) * sizeOfIndices;             // size is the VERTEX struct * 3
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
 
 
 
@@ -436,14 +465,21 @@ void DirectX_Render::InitGraphics(void)
 	vertexBufferData.pSysMem = OurVertices;
 	dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);       // create the buffer
 
+	delete[] OurVertices;
+
+	Box.InitFBX(dev, "../Box_Idle.fbx");
+	Plane.Init(dev, "plane.obj");
+
+	
+	
+	
+
+
 												   // copy the vertices into the buffer
 	//D3D11_MAPPED_SUBRESOURCE ms;
 	//devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
 	//memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
 	//devcon->Unmap(pVBuffer, NULL);
-	delete[] OurVertices;
-	Plane.Init(dev, devcon, cbPerObjectBuffer, "plane.obj");
-
 	//delete[] indices;
 }
 

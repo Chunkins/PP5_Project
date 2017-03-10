@@ -7,7 +7,6 @@
 #include <math.h>
 #include <d3dcompiler.h>
 #include <fbxsdk.h>
-#include "DLLTransit.h"
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
@@ -58,8 +57,10 @@ class DirectX_Render
 {
 private:
 	ID3D11Texture2D * texturetester = nullptr;
-	
+	bool DrawBOX = true;
+	bool DrawBone = true;
 	Model Plane;
+	Model Box;
 	XMMATRIX cube1World;
 	XMMATRIX cube2World;
 	ID3D11Buffer* cbPerObjectBuffer;
@@ -82,7 +83,6 @@ private:
 	ID3D11PixelShader *pPS;                // the pointer to the pixel shader
 	ID3D11VertexShader *pVS2;               // the pointer to the vertex shader
 	ID3D11PixelShader *pPS2;                // the pointer to the pixel shader
-	ID3D11Buffer *pVBuffer;                // the pointer to the vertex buffer
 
 	XMMATRIX WVP;
 	XMMATRIX World;
@@ -101,8 +101,12 @@ private:
 		XMMATRIX  WVP;
 	};
 
+	//***************************************DELETE AFTER MILESTONE 1******************************\\
+	                // the pointer to the vertex buffer
+	ID3D11Buffer *pVBuffer;
 	cbPerObject cbPerObj;
-
+	//.***************************************DELETE AFTER MILESTONE 1******************************\\
+		
 	typedef struct D3DXCOLOR {
 		FLOAT r;
 		FLOAT g;
