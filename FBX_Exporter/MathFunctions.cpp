@@ -1,9 +1,6 @@
 #include "MathFunctions.h"
 
 
-
-// Get rid of export fbx and everyything with it.
-
 const DirectX::XMFLOAT2 MathHelper::vector2Epsilon = DirectX::XMFLOAT2(0.00001f, 0.00001f);
 const DirectX::XMFLOAT3 MathHelper::vector3Epsilon = DirectX::XMFLOAT3(0.00001f, 0.00001f, 0.00001f);
 
@@ -18,8 +15,8 @@ bool MathHelper::CompareVector2WithEpsilon(const DirectX::XMFLOAT2& lhs, const D
 	return DirectX::XMVector3NearEqual(DirectX::XMLoadFloat2(&lhs), DirectX::XMLoadFloat2(&rhs), DirectX::XMLoadFloat2(&vector2Epsilon)) == TRUE;
 }
 
-///////////////
-// Utilities //
+
+// Utility
 void Utilities::WriteMatrix(std::ostream& inStream, FbxMatrix& inMatrix, bool inIsRoot)
 {
 	inStream << "<mat>" << static_cast<float>(inMatrix.Get(0, 0)) << "," << static_cast<float>(inMatrix.Get(0, 1)) << "," << static_cast<float>(inMatrix.Get(0, 2)) << "," << static_cast<float>(inMatrix.Get(0, 3)) << ","

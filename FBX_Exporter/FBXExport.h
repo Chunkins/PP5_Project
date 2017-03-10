@@ -18,7 +18,6 @@ class FBXExport
 {
 public:
 	FBXExport();
-//	~FBXExport();
 
 	bool Initialize();
 	bool LoadScene(const char* inFileName, const char* inOutputPath);
@@ -52,7 +51,6 @@ public:
 	std::vector<PNTIWVertex> getverts() { return mVertices; }
 	void ProcessSkeletonHierarchy(FbxNode* inRootNode);
 	FbxLongLong getAnimationLength() { return mAnimationLength; };
-//	void ProcessSkeletonHierarchy(FbxNode* inRootNode);
 private:
 	void ProcessGeometry(FbxNode* inNode);
 	void ProcessSkeletonHierarchyRecursively(FbxNode* inNode, int inDepth, int myIndex, int inParentIndex);
