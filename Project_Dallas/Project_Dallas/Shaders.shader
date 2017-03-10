@@ -1,3 +1,6 @@
+Texture2D shaderTexture;
+SamplerState SampleType;
+
 cbuffer cbPerObject
 {
 	float4x4 WVP;
@@ -22,5 +25,12 @@ VOut VShader(float4 position : POSITION, float4 color : COLOR)
 
 float4 PShader(float4 position : SV_POSITION, float4 color : COLOR) : SV_TARGET
 {
-	return color;
+	float4 textureColor;
+
+
+// Sample the pixel color from the texture using the sampler at this texture coordinate location.
+textureColor = shaderTexture.Sample(SampleType, color.xy);
+
+return textureColor;
+
 }

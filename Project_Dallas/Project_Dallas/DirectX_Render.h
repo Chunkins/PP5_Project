@@ -11,6 +11,7 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
+#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 //using namespace ;
@@ -56,6 +57,8 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
+	ID3D11Texture2D * texturetester = nullptr;
+	
 	Model Plane;
 	XMMATRIX cube1World;
 	XMMATRIX cube2World;

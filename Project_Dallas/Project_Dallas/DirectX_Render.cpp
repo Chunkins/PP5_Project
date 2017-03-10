@@ -2,6 +2,8 @@
 #include <fstream>
 
 int sizeOfIndices;
+ID3D11ShaderResourceView * pSRV[] = { nullptr };
+ID3D11SamplerState * m_sampler[] = { nullptr };
 
 
 
@@ -355,6 +357,9 @@ void DirectX_Render::RenderFrame(void)
 
 
 	//Draw the first cube
+	devcon->PSSetShaderResources(0, 1, pSRV);
+
+	devcon->PSSetSamplers(0, 1, m_sampler);
 	devcon->Draw(sizeOfIndices, 0);
 
 	devcon->VSSetShader(pVS2, 0, 0);
@@ -371,15 +376,34 @@ void DirectX_Render::RenderFrame(void)
 
 void DirectX_Render::InitGraphics(void)
 {
+	D3D11_SAMPLER_DESC samplerDesc;
+	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.BorderColor[0] = 1.0f;
+	samplerDesc.BorderColor[1] = 1.0f;
+	samplerDesc.BorderColor[2] = 1.0f;
+	samplerDesc.BorderColor[3] = 1.0f;
+	samplerDesc.MinLOD = -FLT_MAX;
+	samplerDesc.MaxLOD = FLT_MAX;
+
+	dev->CreateSamplerState(&samplerDesc, m_sampler);
+	CreateDDSTextureFromFile(dev, L"TestCube.dds", nullptr, pSRV);
 	EXP::DLLTransit tmp;
 	DWORD somesdfasd = 300;
 	TCHAR theAnswer[300];
 	GetCurrentDirectory(somesdfasd, theAnswer);
-	tmp.saveFiletoBin("../Bone.fbx", "../Bone.txt");
+	tmp.saveFiletoBin("../Box_Idle.fbx", "../Box_Idle.txt");
 	std::vector<VertexInfo> kindaTMP;
 	Animation anime;
 	std::vector<BoneInfo> bonevec;
-	tmp.loadFilefromBin("../Bone.txt", kindaTMP, bonevec, &anime);
+	tmp.loadFilefromBin("../Box_Idle.txt", kindaTMP, bonevec, &anime);
 
 	// create a triangle using the VERTEX struct
 	sizeOfIndices = kindaTMP.size();
@@ -390,6 +414,9 @@ void DirectX_Render::InitGraphics(void)
 		OurVertices[i].X = kindaTMP[i].pos.x;
 		OurVertices[i].Y = kindaTMP[i].pos.y;
 		OurVertices[i].Z = kindaTMP[i].pos.z;
+		OurVertices[i].Color[0] = kindaTMP[i].uv.u;
+		OurVertices[i].Color[1] = kindaTMP[i].uv.v;
+
 	}
 
 	// create the vertex buffer
