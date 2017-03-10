@@ -2,6 +2,7 @@
 
 
 Model::Model()
+
 {
 	squareIndexBuffer = nullptr;
 }
@@ -9,11 +10,7 @@ Model::Model()
 
 Model::~Model()
 {
-	boneBuffers.clear();
-	if (squareIndexBuffer)
-		squareIndexBuffer->Release();
-	if (pVBuffer)
-		pVBuffer->Release();
+
 }
 
 void Model::Init(ID3D11Device * t_dev, char * filename)
@@ -22,6 +19,7 @@ void Model::Init(ID3D11Device * t_dev, char * filename)
 	{
 
 	}
+
 	D3D11_BUFFER_DESC bDesc;
 	ZeroMemory(&bDesc, sizeof(bDesc));
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -150,8 +148,12 @@ void Model::Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buf
 	WVP = XMMatrixTranspose(WVP);
 	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &WVP, 0, 0);
 	t_devcon->VSSetConstantBuffers(0, 1, &t_cbPerObjectBuffer);
+	if (_bones == false)
+	{
+		t_devcon->Draw(indexCount, 0);
 
-	t_devcon->Draw(indexCount, 0);
+	}
+
 	if (_bones) {
 		unsigned int i = -1; while (++i!=boneBuffers.size())
 		{
@@ -161,10 +163,16 @@ void Model::Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buf
 			boneBuffers[i].Draw(t_dev, t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, scaleDown, false);
 		}
 	}
+
 }
 
 void Model::Clean()
 {
+	boneBuffers.clear();
+	if (squareIndexBuffer)
+		squareIndexBuffer->Release();
+	if (pVBuffer)
+		pVBuffer->Release();
 }
 
 bool Model::LoadFromFile(const char* _path)
@@ -231,6 +239,13 @@ bool Model::LoadFromFile(const char* _path)
 		reader.close();
 		for (unsigned int i = 0; i < indices.size(); i++)
 		{
+			//////////////quick lazy fix will go
+			norms[indices[i].z - 1].x = 1;
+			norms[indices[i].z - 1].z = 1;
+			norms[indices[i].z - 1].y = 1;
+			norms[indices[i].z - 1].w = 1;
+			/////////////////////////////////
+
 			Vertex vpc;
 			vpc.position = verts[indices[i].x - 1];
 			vpc.uv = uvs[indices[i].y - 1];

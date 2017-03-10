@@ -68,6 +68,7 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="plane.obj" />
+    <None Include="TestCube.dds" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl" />

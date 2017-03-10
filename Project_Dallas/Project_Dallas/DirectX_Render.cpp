@@ -1,6 +1,12 @@
 #include "DirectX_Render.h"
 #include <fstream>
 
+int sizeOfIndices;
+ID3D11ShaderResourceView * pSRV[] = { nullptr };
+ID3D11SamplerState * m_sampler[] = { nullptr };
+
+
+
 DirectX_Render::DirectX_Render()
 {
 	
@@ -136,6 +142,11 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr,translation), temp_camera);
 		camProjection = result;
 	}
+	if (GetAsyncKeyState('1') & 0x1)
+		DrawBOX = !DrawBOX;
+	if (GetAsyncKeyState('2') & 0x1)
+		DrawBone = !DrawBone;
+
 	if (GetAsyncKeyState(VK_SPACE))
 	{
 		XMMATRIX translation = XMMatrixTranslation(0.0f, moveSpd * .001, 0.0f);
@@ -253,6 +264,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
 
+
 	//Create the Depth/Stencil View
 	dev->CreateTexture2D(&depthStencilDesc, NULL, &depthStencilBuffer);
 	dev->CreateDepthStencilView(depthStencilBuffer, NULL, &depthStencilView);
@@ -260,6 +272,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	//Set our Render Target
 	//devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
 	// set the render target as the back buffer
+	
 	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
 
 
@@ -321,6 +334,7 @@ void DirectX_Render::CleanD3D(void)
 //	squareIndexBuffer->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
+
 }
 
 void DirectX_Render::RenderFrame(void)
@@ -330,6 +344,35 @@ void DirectX_Render::RenderFrame(void)
 	devcon->ClearRenderTargetView(backbuffer, color);
 	//Refresh the Depth/Stencil view
 	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	//*************************************************DELETE AFTER MILESTONE 1********************************************\\\
+	
+	UINT stride = sizeof(VERTEX);
+	UINT offset = 0;
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS, 0, 0);
+	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+
+	// select which primtive type we are using
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	//Set the WVP matrix and send it to the constant buffer in effect file
+	WVP = cube1World * camView * camProjection;
+	cbPerObj.WVP = XMMatrixTranspose(WVP);
+	devcon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
+	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->IASetInputLayout(pLayout);
+
+
+	//Draw the first cube
+	devcon->PSSetShaderResources(0, 1, pSRV);
+
+	devcon->PSSetSamplers(0, 1, m_sampler);
+	if (DrawBOX)
+	{
+		devcon->Draw(sizeOfIndices, 0);
+	}
+	//*************************************************DELETE AFTER MILESTONE 1********************************************\\\
+
 	// set shaders
 	devcon->VSSetShader(pVS2, 0, 0);
 	devcon->PSSetShader(pPS2, 0, 0);
@@ -338,11 +381,23 @@ void DirectX_Render::RenderFrame(void)
 
 	//I tried to change this to 2 and it didnt work
 	devcon->IASetInputLayout(pLayout);
-	Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, cube1World, true);
+	//Draw the first cube
+	devcon->PSSetShaderResources(0, 1, pSRV);
+
+	devcon->PSSetSamplers(0, 1, m_sampler);
+	if (DrawBone)
+	{
+		Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, cube1World, true);
+	}
+
+	devcon->VSSetShader(pVS2, 0, 0);
+	devcon->PSSetShader(pPS2, 0, 0);
 	devcon->IASetInputLayout(pLayout2);//cant get rid of tis for some reason
 	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
 
 
+	
+	//devcon->Draw(sizeOfIndices, 0);
 
 
 	// switch the back buffer and the front buffer
@@ -351,10 +406,76 @@ void DirectX_Render::RenderFrame(void)
 
 void DirectX_Render::InitGraphics(void)
 {
+	D3D11_SAMPLER_DESC samplerDesc;
+	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
+
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	samplerDesc.BorderColor[0] = 1.0f;
+	samplerDesc.BorderColor[1] = 1.0f;
+	samplerDesc.BorderColor[2] = 1.0f;
+	samplerDesc.BorderColor[3] = 1.0f;
+	samplerDesc.MinLOD = -FLT_MAX;
+	samplerDesc.MaxLOD = FLT_MAX;
+
+	dev->CreateSamplerState(&samplerDesc, m_sampler);
+	CreateDDSTextureFromFile(dev, L"TestCube.dds", nullptr, pSRV);
+	EXP::DLLTransit tmp;
+	DWORD somesdfasd = 300;
+	TCHAR theAnswer[300];
+	GetCurrentDirectory(somesdfasd, theAnswer);
+	tmp.saveFiletoBin("../Box_Idle.fbx", "../Box_Idle.txt");
+	std::vector<VertexInfo> kindaTMP;
+	Animation anime;
+	std::vector<BoneInfo> bonevec;
+	tmp.loadFilefromBin("../Box_Idle.txt", kindaTMP, bonevec, &anime);
+
+	// create a triangle using the VERTEX struct
+	sizeOfIndices = kindaTMP.size();
+
+	VERTEX* OurVertices = new VERTEX[sizeOfIndices];
+	unsigned i = UINT32_MAX; while (++i != sizeOfIndices)
+	{
+		OurVertices[i].X = kindaTMP[i].pos.x;
+		OurVertices[i].Y = kindaTMP[i].pos.y;
+		OurVertices[i].Z = kindaTMP[i].pos.z;
+		OurVertices[i].Color[0] = kindaTMP[i].uv.u;
+		OurVertices[i].Color[1] = kindaTMP[i].uv.v;
+	}
+
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+
+	bd.ByteWidth = sizeof(VERTEX) * sizeOfIndices;             // size is the VERTEX struct * 3
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+
+
+
+
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+
+	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+	vertexBufferData.pSysMem = OurVertices;
+	dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);       // create the buffer
+
+	delete[] OurVertices;
+
 	Box.InitFBX(dev, "../Box_Idle.fbx");
 	Plane.Init(dev, "plane.obj");
 
+	
+	
+	
 
+
+												   // copy the vertices into the buffer
 	//D3D11_MAPPED_SUBRESOURCE ms;
 	//devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
 	//memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data

@@ -10,6 +10,7 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
+#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 //using namespace ;
@@ -55,6 +56,9 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
+	ID3D11Texture2D * texturetester = nullptr;
+	bool DrawBOX = true;
+	bool DrawBone = true;
 	Model Plane;
 	Model Box;
 	XMMATRIX cube1World;
@@ -97,6 +101,12 @@ private:
 		XMMATRIX  WVP;
 	};
 
+	//***************************************DELETE AFTER MILESTONE 1******************************\\
+	                // the pointer to the vertex buffer
+	ID3D11Buffer *pVBuffer;
+	cbPerObject cbPerObj;
+	//.***************************************DELETE AFTER MILESTONE 1******************************\\
+		
 	typedef struct D3DXCOLOR {
 		FLOAT r;
 		FLOAT g;
