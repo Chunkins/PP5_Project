@@ -3,6 +3,7 @@
 
 Model::Model()
 {
+	squareIndexBuffer = nullptr;
 }
 
 
