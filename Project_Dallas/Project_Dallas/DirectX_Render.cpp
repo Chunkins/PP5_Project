@@ -331,7 +331,7 @@ void DirectX_Render::CleanD3D(void)
 
 	dev->Release();
 	devcon->Release();
-	//squareIndexBuffer->Release();
+//	squareIndexBuffer->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 

@@ -10,11 +10,7 @@ Model::Model()
 
 Model::~Model()
 {
-	boneBuffers.clear();
-	if (squareIndexBuffer)
-		squareIndexBuffer->Release();
-	if (pVBuffer)
-		pVBuffer->Release();
+	Clean();
 }
 
 void Model::Init(ID3D11Device * t_dev, char * filename)
