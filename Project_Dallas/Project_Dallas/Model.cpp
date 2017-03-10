@@ -10,7 +10,7 @@ Model::Model()
 
 Model::~Model()
 {
-
+	Clean();
 }
 
 void Model::Init(ID3D11Device * t_dev, char * filename)
