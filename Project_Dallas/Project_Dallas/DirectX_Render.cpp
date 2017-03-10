@@ -18,20 +18,23 @@ DirectX_Render::~DirectX_Render()
 void DirectX_Render::InitPipeline(void)
 {
 	// load and compile the two shaders
-	ID3D10Blob *VS, *PS;
+	ID3D10Blob *VS, *PS, *VS2, *PS2;
 
 	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "VShader", "vs_4_0", 0, 0, &VS, NULL);
 	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "PShader", "ps_4_0", 0, 0, &PS, NULL);
 
-
+	D3DCompileFromFile(L"VertexShader.hlsl", NULL, NULL, "main", "vs_4_0", 0, 0, &VS2, NULL);
+	D3DCompileFromFile(L"PixelShader.hlsl", NULL, NULL, "main", "ps_4_0", 0, 0, &PS2, NULL);
 
 	// encapsulate both shaders into shader objects
 	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
 	dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pPS);
 
+	dev->CreateVertexShader(VS2->GetBufferPointer(), VS2->GetBufferSize(), NULL, &pVS2);
+	dev->CreatePixelShader(PS2->GetBufferPointer(), PS2->GetBufferSize(), NULL, &pPS2);
+
 	// set the shader objects
-	devcon->VSSetShader(pVS, 0, 0);
-	devcon->PSSetShader(pPS, 0, 0);
+	
 
 	// create the input layout object
 	D3D11_INPUT_ELEMENT_DESC ied[] =
@@ -40,8 +43,18 @@ void DirectX_Render::InitPipeline(void)
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
+	// create the input layout object
+	D3D11_INPUT_ELEMENT_DESC reallayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "UV", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
 	dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
-	devcon->IASetInputLayout(pLayout);
+	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS2->GetBufferPointer(), VS2->GetBufferSize(), &pLayout2);
+
+
 }
 
 void DirectX_Render::Update(void)
@@ -63,6 +76,19 @@ void DirectX_Render::Update(void)
 
 		//Set cube1's world space using the transformations
 		cube1World = Translation * Scale;
+
+		Plane.cube2World = XMMatrixIdentity();
+
+		//Define cube1's world space matrix
+
+		
+		Translation = XMMatrixTranslation(0.0f, -3.0f, 0.8f);
+		Scale = XMMatrixScaling(6.3f, 6.3f, 6.3f);
+
+		//Set cube1's world space using the transformations
+		Rotation = XMMatrixRotationAxis(rotaxis, -rot);
+
+		Plane.cube2World = Translation * Scale;
 
 		//Reset cube2World
 		cube2World = XMMatrixIdentity();
@@ -313,6 +339,8 @@ void DirectX_Render::RenderFrame(void)
 	// select which vertex buffer to display
 	UINT stride = sizeof(VERTEX);
 	UINT offset = 0;
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 
 	// select which primtive type we are using
@@ -323,9 +351,19 @@ void DirectX_Render::RenderFrame(void)
 	cbPerObj.WVP = XMMatrixTranspose(WVP);
 	devcon->UpdateSubresource(cbPerObjectBuffer, 0, NULL, &cbPerObj, 0, 0);
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->IASetInputLayout(pLayout);
+
 
 	//Draw the first cube
 	devcon->Draw(sizeOfIndices, 0);
+
+	devcon->VSSetShader(pVS2, 0, 0);
+	devcon->PSSetShader(pPS2, 0, 0);
+	devcon->IASetInputLayout(pLayout2);
+	Plane.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+
+
+
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
@@ -333,7 +371,6 @@ void DirectX_Render::RenderFrame(void)
 
 void DirectX_Render::InitGraphics(void)
 {
-
 	EXP::DLLTransit tmp;
 	DWORD somesdfasd = 300;
 	TCHAR theAnswer[300];
@@ -401,6 +438,8 @@ void DirectX_Render::InitGraphics(void)
 	//memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
 	//devcon->Unmap(pVBuffer, NULL);
 	delete[] OurVertices;
+	Plane.Init(dev, devcon, cbPerObjectBuffer, "plane.obj");
+
 	//delete[] indices;
 }
 

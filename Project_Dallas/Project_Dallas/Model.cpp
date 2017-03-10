@@ -11,10 +11,66 @@ Model::~Model()
 {
 }
 
-bool Model::LoadFromFile(const char* filename)
+void Model::Init(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, char * filename)
+{
+	if (LoadFromFile("plane.obj"))
+	{
+
+	}
+	D3D11_BUFFER_DESC bDesc;
+	ZeroMemory(&bDesc, sizeof(bDesc));
+	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bDesc.ByteWidth = sizeof(GetVertexData()[0]) * GetVertexData().size();
+
+	D3D11_SUBRESOURCE_DATA subData;
+	ZeroMemory(&subData, sizeof(subData));
+	const vector<Vertex> vertVec = GetVertexData();
+	const Vertex* vertArr = vertVec.data();
+	subData.pSysMem = vertArr;
+
+	t_dev->CreateBuffer(&bDesc, &subData, &pVBuffer);
+
+	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bDesc.ByteWidth = sizeof(GetTris()[0]) * GetTris().size();
+
+	const vector<unsigned int> indVec = GetTris();
+	const unsigned int* indArr = indVec.data();
+	subData.pSysMem = indArr;
+
+	t_dev->CreateBuffer(&bDesc, &subData, &squareIndexBuffer);
+
+	cBufferData.worldMatrix = cube2World;
+	bDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bDesc.ByteWidth = sizeof(cBufferData);
+
+	subData.pSysMem = &cBufferData;
+
+	t_dev->CreateBuffer(&bDesc, &subData, &t_cbPerObjectBuffer);
+}
+
+void Model::Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX t_camView, XMMATRIX t_camProjection)
+{
+	WVP = cube2World * t_camView * t_camProjection;
+	cb.WVP = XMMatrixTranspose(WVP);
+	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &cb, 0, 0);
+	unsigned int offset = 0, stride = sizeof(Vertex);
+	t_devcon->VSSetConstantBuffers(0, 1, &t_cbPerObjectBuffer);
+	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+	t_devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	
+	//Draw the second cube
+	t_devcon->DrawIndexed(GetVertexData().size(), 0, 0);
+}
+
+void Model::Clean()
+{
+}
+
+bool Model::LoadFromFile(const char* _path)
+
 {
 	ifstream reader;
-	reader.open(filename);
+	reader.open(_path);
 	if (reader.is_open())
 	{
 		vector<XMFLOAT4> verts;
@@ -45,9 +101,9 @@ bool Model::LoadFromFile(const char* filename)
 			else if (firstWord == "vt")
 			{
 				XMFLOAT4 coords;
-				lnStream >> coords.x >> coords.y >> coords.z;
+				lnStream >> coords.x >> coords.y;
 				coords.y = 1 - coords.y;
-				coords.w = 1;
+				coords.z = coords.w = 1;
 				uvs.push_back(coords);
 			}
 			else if (firstWord == "f")
@@ -64,7 +120,7 @@ bool Model::LoadFromFile(const char* filename)
 					unsigned int b = atoi(str.c_str());
 					unsigned int c;
 					ss >> c;
-					indices.push_back(Vec3Indices(a, b, c));
+					indices.push_back(Vec3I(a, b, c));
 					tris.push_back((unsigned int)indices.size() - 1);
 					if (lnStream.eof())
 						break;
