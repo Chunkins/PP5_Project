@@ -168,11 +168,7 @@ void Model::Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buf
 
 void Model::Clean()
 {
-	boneBuffers.clear();
-	if (squareIndexBuffer)
-		squareIndexBuffer->Release();
-	if (pVBuffer)
-		pVBuffer->Release();
+	
 }
 
 bool Model::LoadFromFile(const char* _path)
