@@ -249,6 +249,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
 	pBackBuffer->Release();
 
+
 	//Describe our Depth/Stencil Buffer
 	D3D11_TEXTURE2D_DESC depthStencilDesc;
 	ZeroMemory(&depthStencilDesc, sizeof(D3D11_TEXTURE2D_DESC));
@@ -256,24 +257,26 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	depthStencilDesc.Height = SCREEN_HEIGHT;
 	depthStencilDesc.MipLevels = 1;
 	depthStencilDesc.ArraySize = 1;
-	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	depthStencilDesc.SampleDesc.Count = 1;
+	depthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT; 
+	depthStencilDesc.SampleDesc.Count = 4;
 	depthStencilDesc.SampleDesc.Quality = 0;
 	depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthStencilDesc.BindFlags =  D3D11_BIND_DEPTH_STENCIL; 
 	depthStencilDesc.CPUAccessFlags = 0;
 	depthStencilDesc.MiscFlags = 0;
 
 
 	//Create the Depth/Stencil View
-	dev->CreateTexture2D(&depthStencilDesc, NULL, &depthStencilBuffer);
-	dev->CreateDepthStencilView(depthStencilBuffer, NULL, &depthStencilView);
+
+
+	dev->CreateTexture2D(&depthStencilDesc, nullptr, &depthStencilBuffer);
+	dev->CreateDepthStencilView(depthStencilBuffer, nullptr, &depthStencilView);
 
 	//Set our Render Target
-	//devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
+	devcon->OMSetRenderTargets(1, &backbuffer, depthStencilView);
 	// set the render target as the back buffer
 	
-	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+	//devcon->OMSetRenderTargets(1, &backbuffer, NULL);
 
 
 	// Set the viewport
@@ -310,7 +313,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	camView = XMMatrixLookAtLH(camPosition, camTarget, camUp);
 
 	//Set the Projection matrix
-	camProjection = XMMatrixPerspectiveFovLH(70*3.14/180, SCREEN_WIDTH/SCREEN_HEIGHT, 1.0f, 1000.0f);
+	camProjection = XMMatrixPerspectiveFovLH(70*3.14/180, SCREEN_WIDTH/SCREEN_HEIGHT, 0.0001f, 1000.0f);
 
 	InitPipeline();
 	InitGraphics();
@@ -334,7 +337,6 @@ void DirectX_Render::CleanD3D(void)
 //	squareIndexBuffer->Release();
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
-
 }
 
 void DirectX_Render::RenderFrame(void)
@@ -342,8 +344,8 @@ void DirectX_Render::RenderFrame(void)
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	devcon->ClearRenderTargetView(backbuffer, color);
-	//Refresh the Depth/Stencil view
 	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	//Refresh the Depth/Stencil view
 	//*************************************************DELETE AFTER MILESTONE 1********************************************\\\
 	
 	UINT stride = sizeof(VERTEX);
