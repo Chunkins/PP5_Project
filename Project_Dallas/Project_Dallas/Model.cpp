@@ -2,9 +2,7 @@
 
 
 Model::Model()
-
 {
-	squareIndexBuffer = nullptr;
 	WVP = XMMatrixIdentity();
 }
 
@@ -43,24 +41,36 @@ void Model::Init(ID3D11Device * t_dev, char * filename, const wchar_t* _textFile
 	t_dev->CreateBuffer(&bDesc, &subData, &squareIndexBuffer);
 }
 
-void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme)
+void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textureFileName, XMMATRIX* _parentWVP, bool bones = false)
 {
-	CreateDDSTextureFromFile(t_dev, _textFileNAme, nullptr, &pSRV);
+	parentWVP = _parentWVP;
+	// texture creation
+	if (_textureFileName)
+		CreateDDSTextureFromFile(t_dev, _textureFileName, nullptr, &pSRV);
+
+	//load file
 	EXP::DLLTransit tmp;
 	Animation anime;
-	tmp.saveFiletoBin(filename, "../Bone.txt");
+	tmp.saveFiletoBin(filename, "Bone.txt");
 	std::vector<VertexInfo> kindaTMP;
-	tmp.loadFilefromBin("../Bone.txt", kindaTMP, bonevec, &anime);
-	boneBuffers.resize(bonevec.size());
-	unsigned i = bonevec.size(); while (--i!=UINT32_MAX)
-	{
-		boneBuffers[i].InitBone(t_dev, "../Bone.fbx", nullptr);
-	}
-	// create a triangle using the VERTEX struct
-	indexCount = kindaTMP.size();
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
 
+	//bones
+	if (bones) {
+		boneBuffers.resize(bonevec.size());
+		unsigned i = bonevec.size(); while (--i != UINT32_MAX) {
+			boneBuffers[i].WVP = XMMATRIX((float*)&bonevec[i].transform);
+			boneBuffers[i].InitFBX(t_dev, "Bone.fbx", L"BoneTexture.dds", &WVP);
+		}
+	}
+
+	//////////////
+	// create the vertex buffer
+	//////////////
+	// get vertex information out of VertexInfo
+	indexCount = kindaTMP.size();
 	Vertex* OurVertices = new Vertex[indexCount];
-	i = UINT32_MAX; while (++i != indexCount)
+	unsigned i = UINT32_MAX; while (++i != indexCount)
 	{
 		OurVertices[i].position.x = kindaTMP[i].pos.x;
 		OurVertices[i].position.y = kindaTMP[i].pos.y;
@@ -72,66 +82,19 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textF
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
 		OurVertices[i].uv.y = kindaTMP[i].uv.v;
 	}
-
-	// create the vertex buffer
+	// describe the buffer
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
-	bd.ByteWidth = sizeof(Vertex) * indexCount;             // size is the VERTEX struct * 3
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-
-
-
+	bd.ByteWidth = sizeof(Vertex) * indexCount;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	D3D11_SUBRESOURCE_DATA vertexBufferData;
 	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
 	vertexBufferData.pSysMem = OurVertices;
-
-	t_dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);       // create the buffer
+	t_dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);// create buffer
 	delete[] OurVertices;
 }
 
-void Model::InitBone(ID3D11Device * t_dev, char * filename , const wchar_t* _textFileNAme)
-{
-	if (_textFileNAme)
-		CreateDDSTextureFromFile(t_dev, _textFileNAme, nullptr, &pSRV);
-	EXP::DLLTransit tmp;
-	Animation anime;
-	tmp.saveFiletoBin(filename, "../Bone.txt");
-	std::vector<VertexInfo> kindaTMP;
-	tmp.loadFilefromBin("../Bone.txt", kindaTMP, bonevec, &anime);
-
-	// create a triangle using the VERTEX struct
-	indexCount = kindaTMP.size();
-
-	Vertex* OurVertices = new Vertex[indexCount];
-	unsigned i = UINT32_MAX; while (++i != indexCount)
-	{
-		OurVertices[i].position.x = kindaTMP[i].pos.x;
-		OurVertices[i].position.y = kindaTMP[i].pos.y;
-		OurVertices[i].position.z = kindaTMP[i].pos.z;
-		OurVertices[i].uv.x = kindaTMP[i].uv.u;
-		OurVertices[i].uv.y = kindaTMP[i].uv.v;
-		OurVertices[i].normal.x = kindaTMP[i].norm.x;
-		OurVertices[i].normal.y = kindaTMP[i].norm.y;
-		OurVertices[i].normal.z = kindaTMP[i].norm.z;
-	}
-
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-
-	bd.ByteWidth = sizeof(Vertex) * indexCount;             // size is the VERTEX struct * 3
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-
-
-
-	D3D11_SUBRESOURCE_DATA vertexBufferData;
-	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
-	vertexBufferData.pSysMem = OurVertices;
-	t_dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);       // create the buffer
-	delete[] OurVertices;
-}
-
-void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX t_camView, XMMATRIX t_camProjection)
+void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection)
 {
 	if(pSRV)
 		t_devcon->PSSetShaderResources(0, 1, &pSRV);
@@ -145,24 +108,18 @@ void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID
 	t_devcon->DrawIndexed(GetVertexData().size(), 0, 0);
 }
 
-void Model::Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX t_camView, XMMATRIX t_camProjection, bool _bones)
+void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection, bool _bones)
 {
 	if (pSRV)
 		t_devcon->PSSetShaderResources(0, 1, &pSRV);
 	unsigned int offset = 0, stride = sizeof(Vertex);
-	WVP = WVP * t_camView * t_camProjection;
-	WVP = XMMatrixTranspose(WVP);
-	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &WVP, 0, 0);
+	XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP)* t_camView * t_camProjection);
+	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
 	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 	t_devcon->Draw(indexCount, 0);
 	if (_bones) {
 		unsigned int i = -1; while (++i!=boneBuffers.size())
-		{
-			XMMATRIX scaleDown = XMMATRIX((float*)&bonevec[i].transform);
-			scaleDown = scaleDown*XMMatrixTranslationFromVector(WVP.r[3]);
-			scaleDown = scaleDown*XMMatrixScaling(.8f, .8f, .8f);
-			boneBuffers[i].Draw(t_dev, t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, false);
-		}
+			boneBuffers[i].Draw(t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, false);
 	}
 
 }

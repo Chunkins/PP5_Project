@@ -85,8 +85,8 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (msg.message == WM_QUIT)
 				break;
 		}
-		dx.RenderFrame();
 		dx.Update();
+		dx.RenderFrame();
 	}
 	// clean up dx
 	dx.CleanD3D();
