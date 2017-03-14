@@ -10,7 +10,6 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
-#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 //using namespace ;
@@ -56,35 +55,21 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
-	ID3D11Texture2D * texturetester = nullptr;
-	bool DrawBOX = true;
-	bool DrawBone = true;
-	Model Plane;
-	Model Box;
-	XMMATRIX cube1World;
-	XMMATRIX cube2World;
+	Model Plane, Box;
 	ID3D11Buffer* cbPerObjectBuffer;
-	XMMATRIX Rotation;
-	XMMATRIX Scale;
-	XMMATRIX Translation;
+	ID3D11SamplerState * m_sampler ;
 	float delta_time = .001f;
 	float rot = 0.01f;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11Texture2D* depthStencilBuffer;
-	ID3D11Buffer* squareIndexBuffer;
-	ID3D11Buffer* squareVertBuffer;
 	IDXGISwapChain *swapchain;             // the pointer to the swap chain interface
 	ID3D11Device *dev;                     // the pointer to our Direct3D device interface
 	ID3D11DeviceContext *devcon;           // the pointer to our Direct3D device context
 	ID3D11RenderTargetView *backbuffer;    // the pointer to our back buffer
 	ID3D11InputLayout *pLayout;            // the pointer to the input layout
-	ID3D11InputLayout *pLayout2;            // the pointer to the input layout
 	ID3D11VertexShader *pVS;               // the pointer to the vertex shader
 	ID3D11PixelShader *pPS;                // the pointer to the pixel shader
-	ID3D11VertexShader *pVS2;               // the pointer to the vertex shader
-	ID3D11PixelShader *pPS2;                // the pointer to the pixel shader
 
-	XMMATRIX WVP;
 	XMMATRIX World;
 	XMMATRIX camView;
 	XMMATRIX camProjection;
@@ -101,12 +86,6 @@ private:
 		XMMATRIX  WVP;
 	};
 
-	//***************************************DELETE AFTER MILESTONE 1******************************\\
-	                // the pointer to the vertex buffer
-	ID3D11Buffer *pVBuffer;
-	cbPerObject cbPerObj;
-	//.***************************************DELETE AFTER MILESTONE 1******************************\\
-		
 	typedef struct D3DXCOLOR {
 		FLOAT r;
 		FLOAT g;
@@ -114,8 +93,6 @@ private:
 		FLOAT a;
 	} D3DXCOLOR, *LPD3DXCOLOR;
 public:
-	// a struct to define a single vertex
-	struct VERTEX { FLOAT X, Y, Z; float Color[4]; };
 	DirectX_Render();
 	~DirectX_Render();
 	void InitD3D(HWND hWnd);    // sets up and initializes Direct3D
