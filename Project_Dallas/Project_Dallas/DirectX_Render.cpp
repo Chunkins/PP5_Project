@@ -388,11 +388,7 @@ void DirectX_Render::RenderFrame(void)
 	if (DrawBone)
 	{
 		Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, cube1World, true);
-	}
-
-	devcon->VSSetShader(pVS2, 0, 0);
-	devcon->PSSetShader(pPS2, 0, 0);
-	devcon->IASetInputLayout(pLayout2);//cant get rid of tis for some reason
+	};
 	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
 
 
