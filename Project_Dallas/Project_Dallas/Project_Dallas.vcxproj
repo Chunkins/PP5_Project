@@ -162,7 +162,6 @@
   <ItemGroup>
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="DDSTextureLoader.h" />
-    <ClInclude Include="DirectXHelper.h" />
     <ClInclude Include="DirectX_Render.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="modelclass.h" />
@@ -191,6 +190,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="LightPixelShader.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="ModelVertexShader.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

@@ -10,7 +10,8 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
-
+//#include "DirectXHelper.h"
+#include <time.h>
 using namespace DirectX;
 //using namespace ;
 
@@ -55,8 +56,14 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
+	float fakeTime = .001;
+	unsigned int m_lightChoice = 1;
+	float	m_degreesPerSecond = 45;
+	XMFLOAT3 directionlightDir;
+	XMFLOAT3 spotLightPos = XMFLOAT3(-3, 1, -1);
 	Model Plane, Box;
 	ID3D11Buffer* cbPerObjectBuffer;
+	ID3D11Buffer* m_lightBuffer;
 	ID3D11SamplerState * m_sampler ;
 	float delta_time = .001f;
 	float rot = 0.01f;
@@ -69,6 +76,8 @@ private:
 	ID3D11InputLayout *pLayout;            // the pointer to the input layout
 	ID3D11VertexShader *pVS;               // the pointer to the vertex shader
 	ID3D11PixelShader *pPS;                // the pointer to the pixel shader
+
+	DirectX::XMFLOAT4X4 m_camera;
 
 	XMMATRIX World;
 	XMMATRIX camView;
@@ -85,6 +94,13 @@ private:
 	{
 		XMMATRIX  WVP;
 	};
+	struct LightBufferType
+	{
+		XMFLOAT4 diffuseColor;
+		XMFLOAT3 lightDirection;
+		float padding;  // Added extra padding so structure is a multiple of 16 for CreateBuffer function requirements.
+		XMFLOAT4 lightType;
+	};
 
 	typedef struct D3DXCOLOR {
 		FLOAT r;
@@ -96,6 +112,7 @@ public:
 	DirectX_Render();
 	~DirectX_Render();
 	void InitD3D(HWND hWnd);    // sets up and initializes Direct3D
+	void UpdateLights(void);
 	void CleanD3D(void);        // closes Direct3D and releases memory
 	void RenderFrame(void);     // renders a single frame
 	void InitGraphics(void);    // creates the shape to render

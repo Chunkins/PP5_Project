@@ -18,9 +18,11 @@ void DirectX_Render::InitPipeline(void)
 {
 	// load and compile the two shaders
 	ID3D10Blob *VS, *PS;
+	//auto loadVSTask = DX::ReadDataAsync()
 
-	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "VShader", "vs_4_0", 0, 0, &VS, NULL);
-	D3DCompileFromFile(L"shaders.shader", NULL, NULL, "PShader", "ps_4_0", 0, 0, &PS, NULL);
+	
+	D3DCompileFromFile(L"ModelVertexShader.hlsl", NULL, NULL, "main", "vs_5_0", 0, 0, &VS, NULL);
+	D3DCompileFromFile(L"LightPixelShader.hlsl", NULL, NULL, "main", "ps_5_0", 0, 0, &PS, NULL);
 
 	// encapsulate both shaders into shader objects
 	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
@@ -32,7 +34,11 @@ void DirectX_Render::InitPipeline(void)
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "UV", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
 	};
+
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS, 0, 0);
 
 	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
 
@@ -45,6 +51,44 @@ void DirectX_Render::Update(void)
 	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
 	Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+
+	
+	double totalRotation;
+	// Light calculations
+
+	float radiansPerSecond = XMConvertToRadians(m_degreesPerSecond);
+	totalRotation = GetCurrentTime() * radiansPerSecond * .001;
+	float radians = static_cast<float>(fmod(totalRotation, XM_2PI));
+
+
+	float radius = 7.0f;
+	float offset = 0;
+	XMFLOAT4 lightPos = XMFLOAT4(sin(totalRotation + offset) * radius, 7.0f, std::cos(totalRotation + offset) * radius, 1.0f);
+	XMVECTOR lightDir = XMVectorSet(-lightPos.x, -lightPos.y, -lightPos.z, 1.0f);
+	XMStoreFloat3(&directionlightDir, lightDir);
+
+	// spot light calculations
+	float radius2 = 6.5f;
+	float offset2 = 0;
+	XMFLOAT4 lightPos2;//XMFLOAT4(sin(offset2) * radius2, 1.5f, std::cos(offset2) * radius, 1.0f);
+	XMStoreFloat4(&lightPos2, camPosition);
+	XMVECTOR lightDir2= XMVectorSet(-lightPos2.x, -lightPos2.y, -lightPos2.z, 1.0f);
+	XMStoreFloat3(&spotLightPos, lightDir2);
+
+	// Directional
+	if (GetAsyncKeyState('0'))
+		m_lightChoice = 0;
+	if (GetAsyncKeyState('1'))
+		m_lightChoice = 1;
+	// Point
+	if (GetAsyncKeyState('2'))
+		m_lightChoice = 2;
+	// Spot and Diirectional
+	if (GetAsyncKeyState('3'))
+		m_lightChoice = 3;
+	//Directional & Point
+	if (GetAsyncKeyState('4'))
+		m_lightChoice = 4;
 
 	UpdateCamera(1.0f, 1.0f);
 }
@@ -219,6 +263,18 @@ void DirectX_Render::InitD3D(HWND hWnd)
 
 	//devcon->OMSetRenderTargets(1, &backbuffer, NULL);
 
+	//lights 
+	D3D11_BUFFER_DESC lightBufferDesc;
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.MiscFlags = 0;
+	lightBufferDesc.StructureByteStride = 0;
+
+	// Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+	dev->CreateBuffer(&lightBufferDesc, nullptr, &m_lightBuffer);
+
 
 	// Set the viewport
 	D3D11_VIEWPORT viewport;
@@ -257,6 +313,84 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	InitPipeline();
 	InitGraphics();
 
+}
+void DirectX_Render::UpdateLights(void)
+{
+	D3D11_MAPPED_SUBRESOURCE lightData;
+	LightBufferType* lightPointer;
+	unsigned int bufferNumber;
+
+
+	XMFLOAT4X4 m_camera;
+	XMStoreFloat4x4(&m_camera, camView);
+	switch (m_lightChoice)
+	{
+	case 0:
+		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
+		lightPointer = (LightBufferType*)lightData.pData;
+		lightPointer->diffuseColor = XMFLOAT4(0.7, .5, .5, 1);
+		lightPointer->lightDirection = directionlightDir;
+		lightPointer->lightType.x = 1.0;
+		lightPointer->lightType.y = m_camera._11;
+		lightPointer->lightType.z = m_camera._12;
+		lightPointer->lightType.w = m_camera._13;
+		devcon->Unmap(m_lightBuffer, 0);
+		bufferNumber = 0;
+		devcon->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+		break;
+	case 1:
+		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
+		lightPointer = (LightBufferType*)lightData.pData;
+		lightPointer->diffuseColor = XMFLOAT4(0.7, .5, .5, 1);
+		lightPointer->lightDirection = directionlightDir;
+		lightPointer->lightType.x = 1.0;
+		lightPointer->lightType.y = m_camera._41;
+		lightPointer->lightType.z = m_camera._42;
+		lightPointer->lightType.w = m_camera._43;
+		devcon->Unmap(m_lightBuffer, 0);
+		bufferNumber = 0;
+		devcon->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+		break;
+	case 2:
+		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
+		lightPointer = (LightBufferType*)lightData.pData;
+		lightPointer->diffuseColor = XMFLOAT4(0.2, 1.0, 0.6, 1.0);
+		lightPointer->lightDirection = directionlightDir;
+		lightPointer->lightType.x = 2.0;
+		lightPointer->lightType.y = m_camera._41;
+		lightPointer->lightType.z = m_camera._42;
+		lightPointer->lightType.w = m_camera._43;
+		devcon->Unmap(m_lightBuffer, 0);
+		bufferNumber = 0;
+		devcon->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+		break;
+	case 3:
+		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
+		lightPointer = (LightBufferType*)lightData.pData;
+		lightPointer->diffuseColor = XMFLOAT4(0.2, 1.0, 0.3, 1.0);
+		lightPointer->lightDirection = spotLightPos;
+		lightPointer->lightType.x = 3.0;
+		lightPointer->lightType.y = m_camera._41;
+		lightPointer->lightType.z = m_camera._42;
+		lightPointer->lightType.w = m_camera._43;
+		devcon->Unmap(m_lightBuffer, 0);
+		bufferNumber = 0;
+		devcon->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+		break;
+	case 4:
+		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
+		lightPointer = (LightBufferType*)lightData.pData;
+		lightPointer->diffuseColor = XMFLOAT4(0.6, 0.2, 0.3, 1.0);
+		lightPointer->lightDirection = XMFLOAT3(0.2, 3.0, 1.0);
+		lightPointer->lightType.x = 4.0;
+		lightPointer->lightType.y = m_camera._41;
+		lightPointer->lightType.z = m_camera._42;
+		lightPointer->lightType.w = m_camera._43;
+		devcon->Unmap(m_lightBuffer, 0);
+		bufferNumber = 0;
+		devcon->PSSetConstantBuffers(bufferNumber, 1, &m_lightBuffer);
+		break;
+	}
 }
 
 void DirectX_Render::CleanD3D(void)
@@ -298,9 +432,12 @@ void DirectX_Render::RenderFrame(void)
 	//I tried to change this to 2 and it didnt work
 	devcon->IASetInputLayout(pLayout);
 	//Draw the first cube
+	UpdateLights();
 
 	Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, false);
 	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+
+	//UpdateLights();
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
