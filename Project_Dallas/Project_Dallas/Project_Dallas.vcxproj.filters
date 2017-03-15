@@ -59,9 +59,6 @@
     <ClInclude Include="PCH.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DirectXHelper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders.shader">
@@ -74,5 +71,7 @@
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl" />
     <FxCompile Include="VertexShader.hlsl" />
+    <FxCompile Include="LightPixelShader.hlsl" />
+    <FxCompile Include="ModelVertexShader.hlsl" />
   </ItemGroup>
 </Project>
