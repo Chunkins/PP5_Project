@@ -55,7 +55,7 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
-	Model Plane, Box;
+	Model Plane, Box, Teddy;
 	ID3D11Buffer* cbPerObjectBuffer;
 	ID3D11SamplerState * m_sampler ;
 	float delta_time = .001f;

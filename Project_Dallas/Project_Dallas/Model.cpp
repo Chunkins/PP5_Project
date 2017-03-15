@@ -80,7 +80,7 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 		OurVertices[i].normal.y = kindaTMP[i].norm.y;
 		OurVertices[i].normal.z = kindaTMP[i].norm.z;
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
-		OurVertices[i].uv.y = kindaTMP[i].uv.v;
+		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
 	}
 	// describe the buffer
 	D3D11_BUFFER_DESC bd;

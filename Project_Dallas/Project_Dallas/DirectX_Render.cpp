@@ -272,6 +272,7 @@ void DirectX_Render::InitGraphics(void)
 
 	Plane.Init(dev, "plane.obj", nullptr);
 	Box.InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
+	Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
 }
 
 void DirectX_Render::Update(void)
@@ -279,7 +280,10 @@ void DirectX_Render::Update(void)
 
 	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
-	Box.WVP.r[3].m128_f32[1] += .001f;
+	Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f); 
+	//Box.WVP.r[3].m128_f32[1] += .001f;
+	Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.09f, 0.09f, 0.09f);
+
 
 	UpdateCamera(1.0f, 1.0f);
 }
@@ -302,6 +306,7 @@ void DirectX_Render::RenderFrame(void)
 	devcon->IASetInputLayout(pLayout);
 
 	Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+	Teddy.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
 	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
 
 	// switch the back buffer and the front buffer
