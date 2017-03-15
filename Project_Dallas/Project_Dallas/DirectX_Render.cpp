@@ -41,8 +41,6 @@ void DirectX_Render::InitPipeline(void)
 	devcon->PSSetShader(pPS, 0, 0);
 
 	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
-
-
 }
 
 void DirectX_Render::Update(void)
@@ -51,6 +49,7 @@ void DirectX_Render::Update(void)
 	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
 	Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+	*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 
 	
 	double totalRotation;
@@ -90,6 +89,7 @@ void DirectX_Render::Update(void)
 	if (GetAsyncKeyState('4'))
 		m_lightChoice = 4;
 
+	UpdateLights();
 	UpdateCamera(1.0f, 1.0f);
 }
 
@@ -300,7 +300,7 @@ void DirectX_Render::InitD3D(HWND hWnd)
 	dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
 
 	//Camera information
-	camPosition = XMVectorSet(0.0f, 3.0f, -8.0f, 0.0f);
+	camPosition = XMVectorSet(10.0f, 20.0f, 10.0f, 0.0f);
 	camTarget = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 	camUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
@@ -319,9 +319,7 @@ void DirectX_Render::UpdateLights(void)
 	D3D11_MAPPED_SUBRESOURCE lightData;
 	LightBufferType* lightPointer;
 	unsigned int bufferNumber;
-
-
-	XMFLOAT4X4 m_camera;
+XMFLOAT4X4 m_camera;
 	XMStoreFloat4x4(&m_camera, camView);
 	switch (m_lightChoice)
 	{
@@ -392,59 +390,9 @@ void DirectX_Render::UpdateLights(void)
 		break;
 	}
 }
-
-void DirectX_Render::CleanD3D(void)
-{
-	swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
-
-												   // close and release all existing COM objects
-	pLayout->Release();
-	pVS->Release();
-	pPS->Release();
-	swapchain->Release();
-	backbuffer->Release();
-	cbPerObjectBuffer->Release();
-
-	dev->Release();
-	devcon->Release();
-	//	squareIndexBuffer->Release();
-	depthStencilView->Release();
-	depthStencilBuffer->Release();
-}
-
-void DirectX_Render::RenderFrame(void)
-{
-	// clear the back buffer to a deep blue
-	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	devcon->ClearRenderTargetView(backbuffer, color);
-	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-	// set shaders
-	devcon->VSSetShader(pVS, 0, 0);
-	devcon->PSSetShader(pPS, 0, 0);
-
-	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
-	// select which primtive type we are using
-	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	devcon->PSSetSamplers(0, 1, &m_sampler);
-
-	//I tried to change this to 2 and it didnt work
-	devcon->IASetInputLayout(pLayout);
-	//Draw the first cube
-	UpdateLights();
-
-	Box.Draw(dev, devcon, cbPerObjectBuffer, camView, camProjection, false);
-	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
-
-	//UpdateLights();
-
-	// switch the back buffer and the front buffer
-	swapchain->Present(0, 0);
-}
-
 void DirectX_Render::InitGraphics(void)
 {
+	World = XMMatrixIdentity();
 	//texturing
 	D3D11_SAMPLER_DESC samplerDesc;
 	ZeroMemory(&samplerDesc, sizeof(D3D11_SAMPLER_DESC));
@@ -466,19 +414,50 @@ void DirectX_Render::InitGraphics(void)
 	dev->CreateSamplerState(&samplerDesc, &m_sampler);
 
 	Plane.Init(dev, "plane.obj", nullptr);
-	Box.InitFBX(dev, "../Box_Idle.fbx", L"TestCube.dds");
-
-
-
-
-
-
-	// copy the vertices into the buffer
-//D3D11_MAPPED_SUBRESOURCE ms;
-//devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-//memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
-//devcon->Unmap(pVBuffer, NULL);
-//delete[] indices;
+	Box.InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
 }
 
 
+void DirectX_Render::RenderFrame(void)
+{
+	// clear the back buffer to a deep blue
+	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
+	devcon->ClearRenderTargetView(backbuffer, color);
+	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);\
+
+	////////////////////////////////////////
+	// set model resources for standard models
+	///////////////////////////////////////
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS, 0, 0);
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	devcon->PSSetSamplers(0, 1, &m_sampler);
+	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->IASetInputLayout(pLayout);
+
+	Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+
+	// switch the back buffer and the front buffer
+	swapchain->Present(0, 0);
+}
+
+
+void DirectX_Render::CleanD3D(void)
+{
+	swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
+
+	// close and release all existing COM objects
+	pLayout->Release();
+	pVS->Release();
+	pPS->Release();
+	swapchain->Release();
+	backbuffer->Release();
+	cbPerObjectBuffer->Release();
+
+	dev->Release();
+	devcon->Release();
+	//	squareIndexBuffer->Release();
+	depthStencilView->Release();
+	depthStencilBuffer->Release();
+}

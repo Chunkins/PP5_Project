@@ -12,7 +12,6 @@ using namespace DirectX;
 
 struct Vertex
 {
-	
 	XMFLOAT4 position;
 	XMFLOAT4 normal;
 	XMFLOAT4 uv;
@@ -29,29 +28,29 @@ struct Vec3I
 class Model
 {
 public:
-	unsigned int indexCount;
+	// methods
+	Model();
+	~Model();
 	void Init(ID3D11Device * t_dev, char * filename, const wchar_t*);
-	void InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme);
-	void InitBone(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme);
-	void DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX t_camView, XMMATRIX t_camProjection);
-	void Draw(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX t_camView, XMMATRIX t_camProjection, bool bones);
+	void InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme, XMMATRIX*, bool);
+	void DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection);
+	void Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection, bool bones);
+	bool LoadFromFile(const char* _path);
 	void Clean();
-	ID3D11Buffer* squareIndexBuffer;
+	const vector<Vertex> GetVertexData() const;
+	const vector<unsigned int> GetTris() const;
+
+	// members
+	ID3D11Buffer* squareIndexBuffer = nullptr;
 	ID3D11Buffer *pVBuffer;
+	ID3D11ShaderResourceView* pSRV = nullptr;
+	unsigned int indexCount;
+	XMMATRIX* parentWVP;
 	vector< Model> boneBuffers;
-	XMMATRIX WVP;
 	vector<Vertex> vertices;
 	vector<Vec3I> indices;
 	vector<unsigned int> tris;
 	vector<BoneInfo> bonevec;
-	ID3D11ShaderResourceView* pSRV = nullptr;
-
-	bool LoadFromFile(const char* _path);
-
-	const vector<Vertex> GetVertexData() const;
-	const vector<unsigned int> GetTris() const;
-
-	Model();
-	~Model();
+	XMMATRIX WVP;
 };
 
