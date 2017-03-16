@@ -6,6 +6,11 @@
 
 DirectX_Render::DirectX_Render()
 {
+	//Gonna get back to this later don't delete
+	/*Model Plane, Box, Teddy;
+	Models.push_back(Plane);
+	Models.push_back(Box);
+	Models.push_back(Teddy);*/
 
 }
 
@@ -48,16 +53,21 @@ void DirectX_Render::Update(void)
 
 	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
-	Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	
+	Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+	//*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 	//Box.WVP.r[3].m128_f32[1] += .001f;
-	Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.09f, 0.09f, 0.09f);
+	Teddy.WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+
+	if (Swap) // If we're swapping between the models place them in the center
+	{
+		Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+		Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+	}
 
 
 
 
-	
+
 	double totalRotation;
 	// Light calculations
 
@@ -77,7 +87,7 @@ void DirectX_Render::Update(void)
 	float offset2 = 0;
 	XMFLOAT4 lightPos2;//XMFLOAT4(sin(offset2) * radius2, 1.5f, std::cos(offset2) * radius, 1.0f);
 	XMStoreFloat4(&lightPos2, camPosition);
-	XMVECTOR lightDir2= XMVectorSet(-lightPos2.x, -lightPos2.y, -lightPos2.z, 1.0f);
+	XMVECTOR lightDir2 = XMVectorSet(-lightPos2.x, -lightPos2.y, -lightPos2.z, 1.0f);
 	XMStoreFloat3(&spotLightPos, lightDir2);
 
 	// Directional
@@ -94,6 +104,10 @@ void DirectX_Render::Update(void)
 	//Directional & Point
 	if (GetAsyncKeyState('4'))
 		m_lightChoice = 4;
+	if (GetAsyncKeyState(VK_LSHIFT) & 0x1)
+		SwapModel();
+	if (GetAsyncKeyState('R') & 0x1)
+		Reset();
 
 	UpdateLights();
 	UpdateCamera(1.0f, 1.0f);
@@ -325,7 +339,7 @@ void DirectX_Render::UpdateLights(void)
 	D3D11_MAPPED_SUBRESOURCE lightData;
 	LightBufferType* lightPointer;
 	unsigned int bufferNumber;
-XMFLOAT4X4 m_camera;
+	XMFLOAT4X4 m_camera;
 	XMStoreFloat4x4(&m_camera, camView);
 	switch (m_lightChoice)
 	{
@@ -426,19 +440,19 @@ void DirectX_Render::InitGraphics(void)
 
 
 
-	
+
 
 void DirectX_Render::RenderFrame(void)
 {
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	devcon->ClearRenderTargetView(backbuffer, color);
-	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);\
+	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); \
 
-	////////////////////////////////////////
-	// set model resources for standard models
-	///////////////////////////////////////
-	devcon->VSSetShader(pVS, 0, 0);
+		////////////////////////////////////////
+		// set model resources for standard models
+		///////////////////////////////////////
+		devcon->VSSetShader(pVS, 0, 0);
 	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->PSSetSamplers(0, 1, &m_sampler);
@@ -472,3 +486,23 @@ void DirectX_Render::CleanD3D(void)
 	depthStencilView->Release();
 	depthStencilBuffer->Release();
 }
+
+void DirectX_Render::SwapModel()
+{
+	//Temporary
+	Swap = true;
+	if (Box.Display)
+	{
+		Box.Display = false; Teddy.Display = true;
+	}
+	else
+	{
+		Box.Display = true; Teddy.Display = false;
+	}
+}
+void DirectX_Render::Reset()
+{
+	Swap = false;
+	Box.Display = true; Teddy.Display = true;
+}
+
