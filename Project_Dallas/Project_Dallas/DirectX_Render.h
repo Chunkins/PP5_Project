@@ -59,6 +59,7 @@ private:
 	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	bool Swap = false; // Are we currently in model swapping mode
 	Model Plane, Box, Teddy;
+	float prevTime, currTime;
 	float fakeTime = .001;
 	unsigned int m_lightChoice = 1;
 	float	m_degreesPerSecond = 45;

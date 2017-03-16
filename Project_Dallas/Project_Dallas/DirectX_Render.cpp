@@ -11,7 +11,8 @@ DirectX_Render::DirectX_Render()
 	Models.push_back(Plane);
 	Models.push_back(Box);
 	Models.push_back(Teddy);*/
-
+	prevTime = 0;
+	currTime = 0;
 }
 
 
@@ -110,43 +111,46 @@ void DirectX_Render::Update(void)
 		Reset();
 
 	UpdateLights();
-	UpdateCamera(1.0f, 1.0f);
+	UpdateCamera(.01f, 5.0f);
 }
 
 void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 {
+	prevTime = currTime;
+	currTime = GetCurrentTime();
+	float deltaTime = (currTime - prevTime);
 
 	if (GetAsyncKeyState('W'))
 	{
-		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, moveSpd * .001);
+		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, moveSpd * deltaTime);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
 	}
 	if (GetAsyncKeyState('S'))
 	{
-		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, -moveSpd * .001);
+		XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, -moveSpd * deltaTime);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
 	}
 	if (GetAsyncKeyState('A'))
 	{
-		XMMATRIX translation = XMMatrixTranslation(-moveSpd * .001, 0.0f, 0.0f);
+		XMMATRIX translation = XMMatrixTranslation(-moveSpd * deltaTime, 0.0f, 0.0f);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
 	}
 	if (GetAsyncKeyState('D'))
 	{
-		XMMATRIX translation = XMMatrixTranslation(moveSpd * .001, 0.0f, 0.0f);
+		XMMATRIX translation = XMMatrixTranslation(moveSpd * deltaTime, 0.0f, 0.0f);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
 	}
 	if (GetAsyncKeyState('X'))
 	{
-		XMMATRIX translation = XMMatrixTranslation(0.0f, -moveSpd * .001, 0.0f);
+		XMMATRIX translation = XMMatrixTranslation(0.0f, -moveSpd * deltaTime, 0.0f);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
@@ -154,7 +158,7 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 
 	if (GetAsyncKeyState(VK_SPACE))
 	{
-		XMMATRIX translation = XMMatrixTranslation(0.0f, moveSpd * .001, 0.0f);
+		XMMATRIX translation = XMMatrixTranslation(0.0f, moveSpd * deltaTime, 0.0f);
 		XMMATRIX temp_camera = camProjection;
 		XMMATRIX result = XMMatrixMultiply(XMMatrixInverse(nullptr, translation), temp_camera);
 		camProjection = result;
