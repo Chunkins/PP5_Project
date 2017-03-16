@@ -29,7 +29,7 @@ class Model
 {
 public:
 	// methods
-	Model();
+	Model(bool _Display = true, bool _isFBX = false);
 	~Model();
 	void Init(ID3D11Device * t_dev, char * filename, const wchar_t*);
 	void InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme, XMMATRIX*, bool);
@@ -52,5 +52,8 @@ public:
 	vector<unsigned int> tris;
 	vector<BoneInfo> bonevec;
 	XMMATRIX WVP;
+	bool isFBX; //Know if Model is an FBX or not
+	bool Display; //Know if  we want to Display the model (Allows Toggling)
+
 };
 

@@ -56,13 +56,14 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
+	vector<Model> Models; //Container to store all the Models(Not in use yet)
+	bool Swap = false; // Are we currently in model swapping mode
 	Model Plane, Box, Teddy;
 	float fakeTime = .001;
 	unsigned int m_lightChoice = 1;
 	float	m_degreesPerSecond = 45;
 	XMFLOAT3 directionlightDir;
-	XMFLOAT3 spotLightPos = XMFLOAT3(-3, 1, -1);
-	
+	XMFLOAT3 spotLightPos = XMFLOAT3(-3, 1, -1);	
 	ID3D11Buffer* cbPerObjectBuffer;
 	ID3D11Buffer* m_lightBuffer;
 	ID3D11SamplerState * m_sampler ;
@@ -120,6 +121,10 @@ public:
 	void InitPipeline(void);    // loads and prepares the shaders
 	void Update(void);
 	void UpdateCamera(float const moveSpd, float rotSpd);
+	void SwapModel(); //Cycle Between the FBX Models
+	void Reset(); //Return everything in the scene to their Defaults (camera, light, model positions, etc...)
+
+
 };
 
 

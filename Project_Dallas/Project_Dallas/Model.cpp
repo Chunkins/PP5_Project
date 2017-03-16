@@ -1,9 +1,11 @@
 #include "Model.h"
 
 
-Model::Model()
+Model::Model(bool _Display, bool _isFBX)
 {
 	WVP = XMMatrixIdentity();
+	Display = _Display;
+	isFBX = _isFBX;
 }
 
 
@@ -111,16 +113,19 @@ void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID
 
 void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection, bool _bones)
 {
-	if (pSRV)
-		t_devcon->PSSetShaderResources(0, 1, &pSRV);
-	unsigned int offset = 0, stride = sizeof(Vertex);
-	XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP)* t_camView * t_camProjection);
-	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
-	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
-	t_devcon->Draw(indexCount, 0);
-	if (_bones) {
-		unsigned int i = -1; while (++i!=boneBuffers.size())
-			boneBuffers[i].Draw(t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, false);
+	if (Display)
+	{
+		if (pSRV)
+			t_devcon->PSSetShaderResources(0, 1, &pSRV);
+		unsigned int offset = 0, stride = sizeof(Vertex);
+		XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP)* t_camView * t_camProjection);
+		t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
+		t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+		t_devcon->Draw(indexCount, 0);
+		if (_bones) {
+			unsigned int i = -1; while (++i != boneBuffers.size())
+				boneBuffers[i].Draw(t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, false);
+		}
 	}
 
 }
