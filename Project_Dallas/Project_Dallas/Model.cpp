@@ -77,9 +77,9 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 		OurVertices[i].position.z = kindaTMP[i].pos.z;
 		OurVertices[i].position.w = 1.f;
 
-		OurVertices[i].normal.x = -kindaTMP[i].norm.x;
-		OurVertices[i].normal.y = -kindaTMP[i].norm.y;
-		OurVertices[i].normal.z = -kindaTMP[i].norm.z;
+		OurVertices[i].normal.x = kindaTMP[i].norm.x;
+		OurVertices[i].normal.y = kindaTMP[i].norm.y;
+		OurVertices[i].normal.z = kindaTMP[i].norm.z;
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
 		OurVertices[i].uv.y = 1-  kindaTMP[i].uv.v;
 	}

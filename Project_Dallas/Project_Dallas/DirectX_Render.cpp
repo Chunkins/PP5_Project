@@ -325,7 +325,7 @@ void DirectX_Render::UpdateLights(void)
 	D3D11_MAPPED_SUBRESOURCE lightData;
 	LightBufferType* lightPointer;
 	unsigned int bufferNumber;
-XMFLOAT4X4 m_camera;
+	XMFLOAT4X4 m_camera;
 	XMStoreFloat4x4(&m_camera, camView);
 	switch (m_lightChoice)
 	{
@@ -384,7 +384,7 @@ XMFLOAT4X4 m_camera;
 	case 4:
 		devcon->Map(m_lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &lightData);
 		lightPointer = (LightBufferType*)lightData.pData;
-		lightPointer->diffuseColor = XMFLOAT4(0.6, 0.2, 0.3, 1.0);
+		lightPointer->diffuseColor = XMFLOAT4(1.0, 1.0, 1.0, 1.0);
 		lightPointer->lightDirection = XMFLOAT3(0.2, 3.0, 1.0);
 		lightPointer->lightType.x = 4.0;
 		lightPointer->lightType.y = m_camera._41;
