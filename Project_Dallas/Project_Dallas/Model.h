@@ -33,8 +33,8 @@ public:
 	~Model();
 	void Init(ID3D11Device * t_dev, char * filename, const wchar_t*);
 	void InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme, XMMATRIX*, bool);
-	void DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection);
-	void Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection, bool bones);
+	void DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection);
+	void Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX&, bool, ID3D11ShaderResourceView*, ID3D11Buffer*, unsigned int);
 	bool LoadFromFile(const char* _path);
 	void Clean();
 	const vector<Vertex> GetVertexData() const;
@@ -45,8 +45,9 @@ public:
 	ID3D11Buffer *pVBuffer;
 	ID3D11ShaderResourceView* pSRV = nullptr;
 	unsigned int indexCount;
+	
 	XMMATRIX* parentWVP;
-	vector< Model> boneBuffers;
+	vector< XMMATRIX > boneBuffers;
 	vector<Vertex> vertices;
 	vector<Vec3I> indices;
 	vector<unsigned int> tris;

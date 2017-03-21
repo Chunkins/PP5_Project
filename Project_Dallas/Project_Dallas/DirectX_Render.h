@@ -56,8 +56,12 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
-	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	bool Swap = false; // Are we currently in model swapping mode
+	ID3D11Buffer *pVBufferB;
+	ID3D11ShaderResourceView* pSRVB;
+	unsigned int indexCountB;
+
+	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	Model Plane, Box, Teddy;
 	float prevTime, currTime;
 	float fakeTime = .001;

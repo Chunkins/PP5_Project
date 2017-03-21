@@ -51,23 +51,17 @@ void DirectX_Render::InitPipeline(void)
 
 void DirectX_Render::Update(void)
 {
+	XMVECTOR pos = { 0.f,0.f,0.f,1.f };
+	Plane.WVP.r[3] = pos;
+	Box.WVP.r[3] = { -5.f,0.f,0.f,1.f };
+	Teddy.WVP.r[3] = { 5.f,0.f,0.f,1.f };
 
-	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
-
-	Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	//*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	//Box.WVP.r[3].m128_f32[1] += .001f;
-	Teddy.WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
 
 	if (Swap) // If we're swapping between the models place them in the center
 	{
-		Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-		Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+		Box.WVP.r[3] = pos;
+		Teddy.WVP.r[3] = pos;
 	}
-
-
-
-
 
 	double totalRotation;
 	// Light calculations
@@ -436,10 +430,46 @@ void DirectX_Render::InitGraphics(void)
 	samplerDesc.MaxLOD = FLT_MAX;
 
 	dev->CreateSamplerState(&samplerDesc, &m_sampler);
+	CreateDDSTextureFromFile(dev, L"BoneTexture.dds", nullptr, &pSRVB);
+	EXP::DLLTransit tmp;
+	Animation anime;
+	vector<BoneInfo> bonevec;
+	std::vector<VertexInfo> kindaTMP;
+	tmp.saveFiletoBin("Bone.fbx", "Bone.txt");
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
+	indexCountB = kindaTMP.size();
+	Vertex* OurVertices = new Vertex[indexCountB];
+	unsigned i = UINT32_MAX; while (++i != indexCountB)
+	{
+		OurVertices[i].position.x = kindaTMP[i].pos.x;
+		OurVertices[i].position.y = kindaTMP[i].pos.y;
+		OurVertices[i].position.z = kindaTMP[i].pos.z;
+		OurVertices[i].position.w = 1.f;
+
+		OurVertices[i].normal.x = kindaTMP[i].norm.x;
+		OurVertices[i].normal.y = kindaTMP[i].norm.y;
+		OurVertices[i].normal.z = kindaTMP[i].norm.z;
+		OurVertices[i].uv.x = kindaTMP[i].uv.u;
+		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
+	}
+	// describe the buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.ByteWidth = sizeof(Vertex) * indexCountB;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+	vertexBufferData.pSysMem = OurVertices;
+	dev->CreateBuffer(&bd, &vertexBufferData, &pVBufferB);// create buffer
+	delete[] OurVertices;
 
 	Plane.Init(dev, "plane.obj", nullptr);
 	Box.InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
 	Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+
+	Plane.WVP = XMMatrixScaling(10.f, 10.f, 10.f);
+	Box.WVP = XMMatrixIdentity();
+	Teddy.WVP = XMMatrixScaling(0.05f, 0.05f, 0.05f);
 }
 
 
@@ -451,7 +481,7 @@ void DirectX_Render::RenderFrame(void)
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	devcon->ClearRenderTargetView(backbuffer, color);
-	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); \
+	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 		////////////////////////////////////////
 		// set model resources for standard models
@@ -462,10 +492,10 @@ void DirectX_Render::RenderFrame(void)
 	devcon->PSSetSamplers(0, 1, &m_sampler);
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->IASetInputLayout(pLayout);
-
-	Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
-	Teddy.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
-	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+	XMMATRIX camProj = camView* camProjection;
+	Box.Draw(devcon, cbPerObjectBuffer, camProj, true,pSRVB,pVBufferB,indexCountB);
+	Teddy.Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB, pVBufferB, indexCountB);
+	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camProj);
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
