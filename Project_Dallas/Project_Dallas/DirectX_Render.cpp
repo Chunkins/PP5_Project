@@ -43,8 +43,8 @@ void DirectX_Render::InitPipeline(void)
 
 	};
 
-	devcon->VSSetShader(pVS, 0, 0);
-	devcon->PSSetShader(pPS, 0, 0);
+	devcon->VSSetShader(pVS, 0, 0u);
+	devcon->PSSetShader(pPS, 0, 0u);
 
 	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
 }
@@ -67,7 +67,7 @@ void DirectX_Render::Update(void)
 	// Light calculations
 
 	float radiansPerSecond = XMConvertToRadians(m_degreesPerSecond);
-	totalRotation = GetCurrentTime() * radiansPerSecond * .001;
+	totalRotation = GetCurrentTime() * radiansPerSecond * .001f;
 	float radians = static_cast<float>(fmod(totalRotation, XM_2PI));
 
 
