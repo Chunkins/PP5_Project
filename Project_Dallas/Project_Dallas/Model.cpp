@@ -103,9 +103,8 @@ void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID
 	if (pSRV)
 		t_devcon->PSSetShaderResources(0, 1, &pSRV);
 	unsigned int offset = 0, stride = sizeof(Vertex);
-	WVP = WVP * t_camProjection;
-	WVP = XMMatrixTranspose(WVP);
-	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &WVP, 0, 0);
+	XMMATRIX temp = XMMatrixTranspose(WVP * t_camProjection);
+	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
 	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 	t_devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
