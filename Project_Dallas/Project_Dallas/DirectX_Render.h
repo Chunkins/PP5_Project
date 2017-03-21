@@ -10,6 +10,7 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "Model.h"
+#include "RenderNode.h"
 //#include "DirectXHelper.h"
 #include <time.h>
 using namespace DirectX;
@@ -57,8 +58,10 @@ class DirectX_Render
 {
 private:
 	vector<Model> Models; //Container to store all the Models(Not in use yet)
+	vector<RenderNode> NodeList; // My bettter container 
+
 	bool Swap = false; // Are we currently in model swapping mode
-	Model Plane, Box, Teddy;
+	RenderNode Plane, Box, Teddy;
 	float prevTime, currTime;
 	float fakeTime = .001;
 	unsigned int m_lightChoice = 1;

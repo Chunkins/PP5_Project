@@ -85,6 +85,8 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 					invMatrixStuff.m[j][k] = (float)bone[i].mGlobalBindposeInverse[j][k];
 				}
 			}
+			invMatrixStuff.m[3][1] *= -1;
+			invMatrixStuff.m[3][2] *= -1;
 			outbinFile.write((char*)&invMatrixStuff, sizeof(Float4x4));
 
 			Keyframe *walk = bone[i].mAnimation;

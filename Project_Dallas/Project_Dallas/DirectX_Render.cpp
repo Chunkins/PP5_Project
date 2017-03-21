@@ -11,6 +11,23 @@ DirectX_Render::DirectX_Render()
 	Models.push_back(Plane);
 	Models.push_back(Box);
 	Models.push_back(Teddy);*/
+	
+
+	Plane.SetMName("plane.obj");
+	Box.SetMName("Box_Idle.fbx");
+	Box.SetTName((wchar_t)"TestCube.dds");
+	Teddy.SetMName("Teddy_Idle.fbx");
+	Teddy.SetTName((wchar_t)"Teddy_D.dds");
+
+
+
+
+
+	NodeList.push_back(Plane);
+	NodeList.push_back(Box);
+	NodeList.push_back(Teddy);
+
+
 	prevTime = 0;
 	currTime = 0;
 }
@@ -51,18 +68,24 @@ void DirectX_Render::InitPipeline(void)
 
 void DirectX_Render::Update(void)
 {
+	NodeList[0].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
+	//Plane .WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
-	Plane.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 
-	Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+	NodeList[1].GetModel()->WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+	//Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 	//*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 	//Box.WVP.r[3].m128_f32[1] += .001f;
-	Teddy.WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+
+	NodeList[2].GetModel()->WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+	//Teddy.WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
 
 	if (Swap) // If we're swapping between the models place them in the center
 	{
-		Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-		Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+		NodeList[1].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+		//Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
+		NodeList[2].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+		//Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
 	}
 
 
@@ -437,9 +460,21 @@ void DirectX_Render::InitGraphics(void)
 
 	dev->CreateSamplerState(&samplerDesc, &m_sampler);
 
-	Plane.Init(dev, "plane.obj", nullptr);
-	Box.InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
-	Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+	//for (size_t i = 0; i < NodeList.size(); i++)
+	//{
+	//	const wchar_t * tmp = NodeList[i].GetTName();
+	//	NodeList[i].GetModel()->Init(dev, NodeList[i].GetMName(), tmp);
+	//}
+
+	NodeList[0].GetModel()->Init(dev, "plane.obj", nullptr);
+	NodeList[1].GetModel()->InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
+	NodeList[2].GetModel()->InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+	//Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+	NodeList[0].InitRenderStateFill(dev);
+	NodeList[1].InitRenderStateWireFrame(dev);
+	NodeList[2].InitRenderStateWireFrame(dev);
+
+
 }
 
 
@@ -463,9 +498,18 @@ void DirectX_Render::RenderFrame(void)
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->IASetInputLayout(pLayout);
 
-	Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+
+	devcon->RSSetState(NodeList[0].GetRS());
+	NodeList[0].GetModel()->DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+	devcon->RSSetState(NodeList[1].GetRS());
+	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+	devcon->RSSetState(NodeList[2].GetRS());
+	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+
+
+	/*Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
 	Teddy.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
-	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);*/
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
@@ -495,18 +539,18 @@ void DirectX_Render::SwapModel()
 {
 	//Temporary
 	Swap = true;
-	if (Box.Display)
+	if (NodeList[1].GetModel()->Display)
 	{
-		Box.Display = false; Teddy.Display = true;
+		NodeList[1].GetModel()->Display = false; NodeList[2].GetModel()->Display = true;
 	}
 	else
 	{
-		Box.Display = true; Teddy.Display = false;
+		NodeList[1].GetModel()->Display = true; NodeList[2].GetModel()->Display = false;
 	}
 }
 void DirectX_Render::Reset()
 {
 	Swap = false;
-	Box.Display = true; Teddy.Display = true;
+	NodeList[1].GetModel()->Display = true; NodeList[2].GetModel()->Display = true;
 }
 

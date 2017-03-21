@@ -156,6 +156,7 @@
     <ClCompile Include="DirectX_Render.cpp" />
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="modelclass.cpp" />
+    <ClCompile Include="RenderNode.cpp" />
     <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -166,6 +167,7 @@
     <ClInclude Include="Model.h" />
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="PCH.h" />
+    <ClInclude Include="RenderNode.h" />
     <ClInclude Include="textureclass.h" />
   </ItemGroup>
   <ItemGroup>
