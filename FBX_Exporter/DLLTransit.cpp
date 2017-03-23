@@ -21,10 +21,10 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 	exporter->ProcessMesh(tmpNode);
 
 	std::vector<PNTIWVertex> SendData = exporter->getverts();
-	std::vector<Joint> bone = exporter->getSkeleton().mJoints;
+	std::vector<Joint> bones = exporter->getSkeleton().mJoints;
 
-	int vertSize = (int)exporter->getverts().size();
-	
+	int vertSize = (int)exporter->getverts().size()/2;
+
 	std::ofstream outbinFile(binFileName, std::ios::binary);
 
 	if (outbinFile.is_open())
@@ -46,13 +46,13 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 				outbinFile.write((char*)&toReturn.blendWeights[j], sizeof(float));
 				outbinFile.write((char*)&toReturn.boneIndices[j], sizeof(int));
 			}
-			
+
 			//	Float3 vert;
 			toReturn.pos.x = SendData[i].mPosition.x;
 			toReturn.pos.y = SendData[i].mPosition.y;
 			toReturn.pos.z = SendData[i].mPosition.z;
 
-		
+
 			//	Float3 norm;
 			toReturn.norm.x = SendData[i].mNormal.x;
 			toReturn.norm.y = SendData[i].mNormal.y;
@@ -68,51 +68,70 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 		}
 
 		// Writing out the bones
-		unsigned int numBones = (unsigned int)bone.size();
-		outbinFile.write((char*)&numBones, sizeof(unsigned int));
+		unsigned int boneCount = (unsigned int)bones.size();
+		outbinFile.write((char*)&boneCount, sizeof(unsigned int));
 
-		for (size_t i = 0; i < numBones; i++)
+		int frameCount = 0;
+		Keyframe *walk;
+		// in case the first bone lacks an animation
+		int i = boneCount;
+		while (--i!=-1)
 		{
-			outbinFile.write((char*)&bone[i].mMyIndex, sizeof(int));
-			outbinFile.write((char*)&bone[i].mParentIndex, sizeof(int));
+			walk = bones[i].mAnimation;
+			if (walk) {
+				std::vector<float> times;
+				while (walk)
+				{
+					++frameCount;
+					times.push_back(walk->keyFrameTime);
+					walk = walk->mNext;
+				}
+				outbinFile.write((char*)&frameCount, sizeof(int));
+				for each (float keytime in times)
+				{
+					outbinFile.write((char*)&keytime, sizeof(float));
+				}
+				break;
+			}
+		}
 
-			// FBX InverseMatrixStuff
-			Float4x4 invMatrixStuff;
+		for (size_t i = 0; i < boneCount; i++)
+		{
+			outbinFile.write((char*)&bones[i].mMyIndex, sizeof(int));
+			outbinFile.write((char*)&bones[i].mParentIndex, sizeof(int));
+
+			Float4x4 initTransform;
 			for (size_t j = 0; j < 4; j++)
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					invMatrixStuff.m[j][k] = (float)bone[i].mGlobalBindposeInverse[j][k];
+					initTransform.m[j][k] = (float)bones[i].mGlobalBindposeInverse[j][k];
 				}
 			}
-			invMatrixStuff.m[3][1] *= -1;
-			invMatrixStuff.m[3][2] *= -1;
-			outbinFile.write((char*)&invMatrixStuff, sizeof(Float4x4));
+			//initTransform.m[3][1] *= -1;
+			//initTransform.m[3][2] *= -1;
+			outbinFile.write((char*)&initTransform, sizeof(Float4x4));
 
-			Keyframe *walk = bone[i].mAnimation;
-			int numKeyframes = 0;
-			while (walk)
+			walk = bones[i].mAnimation;
+
+			int l = -1; while (++l != frameCount)
 			{
-				++numKeyframes;
-				walk = walk->mNext;
-			}
-			// num Keyframes
-			walk = bone[i].mAnimation;
-			outbinFile.write((char*)&numKeyframes, sizeof(int));
-			for (int a = 0; a < numKeyframes; a++)
-			{
-				Float4x4 keyFrameAnimMatrixStuff;
-				for (size_t j = 0; j < 4; j++)
-				{
-					for (size_t k = 0; k < 4; k++)
-					{
-						keyFrameAnimMatrixStuff.m[j][k] = (float)walk->mGlobalTransform[j][k];
-					}
+				if (walk) {
+					Float4x4 keyFrameTransform;
+					for (size_t j = 0; j < 4; j++)
+						for (size_t k = 0; k < 4; k++)
+							keyFrameTransform.m[j][k] = (float)walk->mGlobalTransform[j][k];
+					//keyFrameTransform.m[3][1] *= -1;
+					//keyFrameTransform.m[3][2] *= -1;
+					outbinFile.write((char*)&keyFrameTransform, sizeof(Float4x4));
+					walk = walk->mNext;
 				}
-				outbinFile.write((char*)&keyFrameAnimMatrixStuff, sizeof(Float4x4));
-				outbinFile.write((char*)&walk->keyFrameTime, sizeof(float));
-				walk = walk->mNext;
+				else
+				{
+					outbinFile.write((char*)&initTransform, sizeof(Float4x4));
+				}
 			}
+
 		}
 		// animations
 		float animationTime = (float)exporter->getAnimationLength();
@@ -122,23 +141,21 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 	}
 }
 
-void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation* animation)
+void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation& animation)
 {
-//	VertexInfo
-	VertexInfo pushData;
+	//	VertexInfo
 	std::ifstream inbinFile;
 
 	inbinFile.open(inFileName, std::ios::binary | std::ios::in);
-	int something = 0;
-	unsigned int sizeOfFile = 0;
+	unsigned int sizeOfFile;
 	inbinFile.read((char*)&sizeOfFile, sizeof(unsigned int));
 
 	for (size_t i = 0; i < sizeOfFile; i++)
 	{
 		VertexInfo toReturn;
 		inbinFile.read((char*)&toReturn.numIndicies, sizeof(unsigned int));
-
-		for (size_t j = 0; j < toReturn.numIndicies; j++)
+		size_t l = 0;
+		for (; l < toReturn.numIndicies; l++)
 		{
 			float blendwets;
 			int boneind;
@@ -147,51 +164,52 @@ void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<Vertex
 
 			toReturn.blendWeights.push_back(blendwets);
 			toReturn.boneIndices.push_back(boneind);
-
-
+		}
+		while (l < 4) {
+			toReturn.blendWeights.push_back(0);
+			toReturn.boneIndices.push_back(0);
+			++l;
 		}
 
-	//	Float3 vert;
+		//	Float3 vert;
 		inbinFile.read((char*)&toReturn.pos, sizeof(Float3));
-	//	Float3 norm;
+		//	Float3 norm;
 		inbinFile.read((char*)&toReturn.norm, sizeof(Float3));
-	//	Float2 uv;
+		//	Float2 uv;
 		inbinFile.read((char*)&toReturn.uv, sizeof(Float2));
 		if (inbinFile.eof())
 			break;
 		returnData.push_back(toReturn);
-		
+
 	}
 
 	// reading in the bones
-	unsigned int numBones;
-	inbinFile.read((char*)&numBones, sizeof(unsigned int));
-
-	for (unsigned int i = 0; i < numBones; i++)
+	unsigned int boneCount;
+	inbinFile.read((char*)&boneCount, sizeof(unsigned int));
+	int frameCount;
+	inbinFile.read((char*)&frameCount, sizeof(int));
+	animation.frames.resize(frameCount);
+	animation.times.resize(frameCount);
+	int j = -1; while (++j != frameCount)
 	{
-		BoneInfo _joint;
-		inbinFile.read((char*)&_joint.index, sizeof(int));
-		inbinFile.read((char*)&_joint.parentIndex, sizeof(int));
-		inbinFile.read((char*)&_joint.transform, sizeof(Float4x4));
-
-		int numKeyframes;
-		inbinFile.read((char*)&numKeyframes, sizeof(int));
-
-		_joint.keyframes = new std::vector<KeyFrame*>();
-		for (size_t a = 0; a < (unsigned int)numKeyframes; a++)
-		{
-			KeyFrame *incKey = new KeyFrame;
-			inbinFile.read((char*)&incKey->transform, sizeof(Float4x4));
-			inbinFile.read((char*)&incKey->keyTime, sizeof(float));
-
-			_joint.keyframes->push_back(incKey);
-		}
-		returnBone.push_back(_joint);
-
-		animation = new Animation();
-		
+		animation.frames[j].resize(40);
+		inbinFile.read((char*)&animation.times[j], sizeof(float));
 	}
-	inbinFile.read((char*)&animation->_time, sizeof(float));
-	
+
+	int k = -1; while (++k != boneCount)
+	{
+		BoneInfo joint;
+		inbinFile.read((char*)&joint.index, sizeof(int));
+		inbinFile.read((char*)&joint.parentIndex, sizeof(int));
+		inbinFile.read((char*)&joint.transform, sizeof(Float4x4));
+		returnBone.push_back(joint);
+		int i = -1; while (++i != frameCount)
+		{
+			inbinFile.read((char*)&animation.frames[i][k], sizeof(Float4x4));
+		}
+	}
+
+	inbinFile.read((char*)&animation.time, sizeof(float));
+
 	inbinFile.close();
 }

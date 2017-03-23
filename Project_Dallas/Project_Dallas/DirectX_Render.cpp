@@ -1,5 +1,4 @@
 #include "DirectX_Render.h"
-#include <fstream>
 
 
 
@@ -37,14 +36,18 @@ void DirectX_Render::InitPipeline(void)
 	// create the input layout object
 	D3D11_INPUT_ELEMENT_DESC reallayout[] =
 	{
+		{ "BONECOUNT", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "UV", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 
 	};
 
 	devcon->VSSetShader(pVS, 0, 0u);
 	devcon->PSSetShader(pPS, 0, 0u);
+
 
 	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
 }
@@ -99,10 +102,23 @@ void DirectX_Render::Update(void)
 	//Directional & Point
 	if (GetAsyncKeyState('4'))
 		m_lightChoice = 4;
+	//swap model
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x1)
 		SwapModel();
 	if (GetAsyncKeyState('R') & 0x1)
 		Reset();
+	if (GetAsyncKeyState('F') & 0x1) {
+		++Teddy.frame;
+		++Box.frame;
+		if (Teddy.frame>Teddy.anim.time-1)
+		{
+			Teddy.frame = 1;
+		}
+		if (Box.frame>Box.anim.time - 1)
+		{
+			Box.frame = 1;
+		}
+	}
 
 	UpdateLights();
 	UpdateCamera(.01f, 5.0f);
@@ -308,14 +324,27 @@ void DirectX_Render::InitD3D(HWND hWnd)
 
 	devcon->RSSetViewports(1, &viewport);
 
+	//WVP constant buffer
 	D3D11_BUFFER_DESC cbbd;
 	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-
 	cbbd.Usage = D3D11_USAGE_DEFAULT;
 	cbbd.ByteWidth = sizeof(cbPerObject);
 	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
 	dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
+
+	//framebuffer
+	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof(Float4x4)*40;
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dev->CreateBuffer(&cbbd, NULL, &frameBufer);
+
+	// cameraBuffer
+	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof(Float4x4);
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dev->CreateBuffer(&cbbd, NULL, &cameraBuffer);
 
 	//Camera information
 	camPosition = XMVectorSet(10.0f, 20.0f, 10.0f, 0.0f);
@@ -436,7 +465,7 @@ void DirectX_Render::InitGraphics(void)
 	vector<BoneInfo> bonevec;
 	std::vector<VertexInfo> kindaTMP;
 	tmp.saveFiletoBin("Bone.fbx", "Bone.txt");
-	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, anime);
 	indexCountB = kindaTMP.size();
 	Vertex* OurVertices = new Vertex[indexCountB];
 	unsigned i = UINT32_MAX; while (++i != indexCountB)
@@ -466,10 +495,15 @@ void DirectX_Render::InitGraphics(void)
 	Plane.Init(dev, "plane.obj", nullptr);
 	Box.InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
 	Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+	Plane.parentWVP = &World;
 
 	Plane.WVP = XMMatrixScaling(10.f, 10.f, 10.f);
 	Box.WVP = XMMatrixIdentity();
 	Teddy.WVP = XMMatrixScaling(0.05f, 0.05f, 0.05f);
+
+	//set constant buffers
+	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->VSSetConstantBuffers(1, 1, &frameBufer);
 }
 
 
@@ -490,11 +524,10 @@ void DirectX_Render::RenderFrame(void)
 	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->PSSetSamplers(0, 1, &m_sampler);
-	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->IASetInputLayout(pLayout);
 	XMMATRIX camProj = camView* camProjection;
-	Box.Draw(devcon, cbPerObjectBuffer, camProj, true,pSRVB,pVBufferB,indexCountB);
-	Teddy.Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB, pVBufferB, indexCountB);
+	Box.Draw(devcon, cbPerObjectBuffer, camProj, true,pSRVB,pVBufferB,indexCountB, frameBufer);
+	Teddy.Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB, pVBufferB, indexCountB, frameBufer);
 	Plane.DrawIndexed(dev, devcon, cbPerObjectBuffer, camProj);
 
 	// switch the back buffer and the front buffer
@@ -513,6 +546,12 @@ void DirectX_Render::CleanD3D(void)
 	swapchain->Release();
 	backbuffer->Release();
 	cbPerObjectBuffer->Release();
+	frameBufer->Release();
+	m_lightBuffer->Release();
+	cameraBuffer->Release();
+	pVBufferB->Release();
+	pSRVB->Release();
+
 
 	dev->Release();
 	devcon->Release();

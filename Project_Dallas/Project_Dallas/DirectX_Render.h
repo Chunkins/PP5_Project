@@ -44,13 +44,6 @@ using namespace DirectX;
 //	std::vector<KeyFrame*>* keyframes;
 //};
 
-struct VERTEX {
-	float x;
-	float y;
-	float z;
-	float color[4];
-};
-
 
 
 class DirectX_Render
@@ -60,16 +53,20 @@ private:
 	ID3D11Buffer *pVBufferB;
 	ID3D11ShaderResourceView* pSRVB;
 	unsigned int indexCountB;
+	unsigned int frame = 0u;
 
 	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	Model Plane, Box, Teddy;
 	float prevTime, currTime;
-	float fakeTime = .001;
-	unsigned int m_lightChoice = 1;
-	float	m_degreesPerSecond = 45;
+	float fakeTime = .001f;
+	unsigned int m_lightChoice = 1u;
+	float	m_degreesPerSecond = 45.f;
 	XMFLOAT3 directionlightDir;
-	XMFLOAT3 spotLightPos = XMFLOAT3(-3, 1, -1);	
+	XMFLOAT3 spotLightPos = XMFLOAT3(-3.f, 1.f, -1.f);
 	ID3D11Buffer* cbPerObjectBuffer;
+	ID3D11Buffer* frameBufer;
+	ID3D11Buffer* cameraBuffer;
+	ID3D11Buffer* parentBuffer;
 	ID3D11Buffer* m_lightBuffer;
 	ID3D11SamplerState * m_sampler ;
 	float delta_time = .001f;
@@ -83,6 +80,7 @@ private:
 	ID3D11InputLayout *pLayout;            // the pointer to the input layout
 	ID3D11VertexShader *pVS;               // the pointer to the vertex shader
 	ID3D11PixelShader *pPS;                // the pointer to the pixel shader
+	
 
 	DirectX::XMFLOAT4X4 m_camera;
 
