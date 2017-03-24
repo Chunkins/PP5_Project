@@ -1,5 +1,4 @@
 #include "DirectX_Render.h"
-#include <fstream>
 
 
 
@@ -54,9 +53,12 @@ void DirectX_Render::InitPipeline(void)
 	// create the input layout object
 	D3D11_INPUT_ELEMENT_DESC reallayout[] =
 	{
+		{ "BONECOUNT", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "UV", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 
 	};
 
@@ -122,6 +124,7 @@ void DirectX_Render::Update(void)
 	//Directional & Point
 	if (GetAsyncKeyState('4'))
 		m_lightChoice = 4;
+	//swap model
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x1)
 		SwapModel();
 	if (GetAsyncKeyState(VK_RSHIFT) & 0x1)
@@ -131,6 +134,18 @@ void DirectX_Render::Update(void)
 	}
 	if (GetAsyncKeyState('R') & 0x1)
 		Reset();
+	if (GetAsyncKeyState('F') & 0x1) {
+		++Teddy.GetModel()->frame;
+		++Box.GetModel()->frame;
+		if (Teddy.GetModel()->frame>Teddy.GetModel()->anim.time-1)
+		{
+			Teddy.GetModel()->frame = 1;
+		}
+		if (Box.GetModel()->frame>Box.GetModel()->anim.time - 1)
+		{
+			Box.GetModel()->frame = 1;
+		}
+	}
 
 	UpdateLights();
 	UpdateCamera(.01f, 5.0f);
@@ -336,14 +351,27 @@ void DirectX_Render::InitD3D(HWND hWnd)
 
 	devcon->RSSetViewports(1, &viewport);
 
+	//WVP constant buffer
 	D3D11_BUFFER_DESC cbbd;
 	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
-
 	cbbd.Usage = D3D11_USAGE_DEFAULT;
 	cbbd.ByteWidth = sizeof(cbPerObject);
 	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-
 	dev->CreateBuffer(&cbbd, NULL, &cbPerObjectBuffer);
+
+	//framebuffer
+	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof(Float4x4)*40;
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dev->CreateBuffer(&cbbd, NULL, &frameBufer);
+
+	// cameraBuffer
+	ZeroMemory(&cbbd, sizeof(D3D11_BUFFER_DESC));
+	cbbd.Usage = D3D11_USAGE_DEFAULT;
+	cbbd.ByteWidth = sizeof(Float4x4);
+	cbbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dev->CreateBuffer(&cbbd, NULL, &cameraBuffer);
 
 	//Camera information
 	camPosition = XMVectorSet(10.0f, 20.0f, 10.0f, 0.0f);
@@ -464,7 +492,8 @@ void DirectX_Render::InitGraphics(void)
 	vector<BoneInfo> bonevec;
 	std::vector<VertexInfo> kindaTMP;
 	tmp.saveFiletoBin("Bone.fbx", "Bone.txt");
-	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
+	
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, anime);
 	indexCountB = kindaTMP.size();
 	Vertex* OurVertices = new Vertex[indexCountB];
 	unsigned i = UINT32_MAX; while (++i != indexCountB)
@@ -491,7 +520,9 @@ void DirectX_Render::InitGraphics(void)
 	dev->CreateBuffer(&bd, &vertexBufferData, &pVBufferB);// create buffer
 	delete[] OurVertices;
 
+	Plane.GetModel()->parentWVP = &World;
 
+	//Plane.WVP = XMMatrixScaling(10.f, 10.f, 10.f);
 	//for (size_t i = 0; i < NodeList.size(); i++)
 	//{
 	//	const wchar_t * tmp = NodeList[i].GetTName();
@@ -509,6 +540,10 @@ void DirectX_Render::InitGraphics(void)
 
 
 
+
+	//set constant buffers
+	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->VSSetConstantBuffers(1, 1, &frameBufer);
 }
 
 
@@ -530,17 +565,17 @@ void DirectX_Render::RenderFrame(void)
 	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->PSSetSamplers(0, 1, &m_sampler);
-	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->IASetInputLayout(pLayout);
 	XMMATRIX camProj = camView* camProjection;
+
 
 
 	devcon->RSSetState(NodeList[0].GetRS());
 	NodeList[0].GetModel()->DrawIndexed(dev, devcon, cbPerObjectBuffer, camProj);
 	devcon->RSSetState(NodeList[1].GetRS());
-	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB);
+	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB,frameBufer);
 	devcon->RSSetState(NodeList[2].GetRS());
-	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB);
+	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB,frameBufer);
 
 
 	/*Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
@@ -563,6 +598,12 @@ void DirectX_Render::CleanD3D(void)
 	swapchain->Release();
 	backbuffer->Release();
 	cbPerObjectBuffer->Release();
+	frameBufer->Release();
+	m_lightBuffer->Release();
+	cameraBuffer->Release();
+	pVBufferB->Release();
+	pSRVB->Release();
+
 
 	dev->Release();
 	devcon->Release();
@@ -577,6 +618,7 @@ void DirectX_Render::SwapModel()
 	Swap = true;
 	if (NodeList[1].GetModel()->Display)
 	{
+	
 		NodeList[1].GetModel()->Display = false; NodeList[2].GetModel()->Display = true;
 	}
 	else
@@ -588,6 +630,7 @@ void DirectX_Render::Reset()
 {
 	
 	Swap = false;
+	
 	NodeList[1].GetModel()->Display = true; NodeList[2].GetModel()->Display = true;
 }
 

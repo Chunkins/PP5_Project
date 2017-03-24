@@ -6,7 +6,7 @@ Model::Model(bool _Display, bool _isFBX)
 	WVP = XMMatrixIdentity();
 	Display = _Display;
 	isFBX = _isFBX;
-	
+
 }
 
 
@@ -19,27 +19,25 @@ void Model::Init(ID3D11Device * t_dev, char * filename, const wchar_t* _textFile
 {
 	if (_textFileNAme)
 		CreateDDSTextureFromFile(t_dev, _textFileNAme, nullptr, &pSRV);
-	LoadFromFile("plane.obj");
+	vector<Vertex> temp;
+	vector<unsigned int> tempTris;
+	LoadFromFile("plane.obj", temp, tempTris);
+	indexCount = temp.size();
 
 	D3D11_BUFFER_DESC bDesc;
 	ZeroMemory(&bDesc, sizeof(bDesc));
 	bDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bDesc.ByteWidth = sizeof(Vertex) * GetVertexData().size();
+	bDesc.ByteWidth = sizeof(Vertex) * indexCount;
 
 	D3D11_SUBRESOURCE_DATA subData;
 	ZeroMemory(&subData, sizeof(subData));
-	const vector<Vertex> vertVec = GetVertexData();
-	const Vertex* vertArr = vertVec.data();
-	subData.pSysMem = vertArr;
+	subData.pSysMem = temp.data();
 
 	t_dev->CreateBuffer(&bDesc, &subData, &pVBuffer);
 
 	bDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-	bDesc.ByteWidth = sizeof(GetTris()[0]) * GetTris().size();
-
-	const vector<unsigned int> indVec = GetTris();
-	const unsigned int* indArr = indVec.data();
-	subData.pSysMem = indArr;
+	bDesc.ByteWidth = sizeof(unsigned int) * tempTris.size();
+	subData.pSysMem = tempTris.data();
 
 	t_dev->CreateBuffer(&bDesc, &subData, &squareIndexBuffer);
 }
@@ -53,19 +51,10 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 
 	//load file
 	EXP::DLLTransit tmp;
-	Animation anime;
 	tmp.saveFiletoBin(filename, "Bone.txt");
 	std::vector<VertexInfo> kindaTMP;
-	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, anim);
 
-	//bones
-	if (bones) {
-		boneBuffers.resize(bonevec.size());
-		unsigned i = bonevec.size(); while (--i != UINT32_MAX) {
-			boneBuffers[i] = XMMATRIX((float*)&bonevec[i].transform);
-			
-		}
-	}
 
 	//////////////
 	// create the vertex buffer
@@ -75,6 +64,8 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 	Vertex* OurVertices = new Vertex[indexCount];
 	unsigned i = UINT32_MAX; while (++i != indexCount)
 	{
+		OurVertices[i].boneCount.x = kindaTMP[i].numIndicies;
+
 		OurVertices[i].position.x = kindaTMP[i].pos.x;
 		OurVertices[i].position.y = kindaTMP[i].pos.y;
 		OurVertices[i].position.z = kindaTMP[i].pos.z;
@@ -83,8 +74,22 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 		OurVertices[i].normal.x = kindaTMP[i].norm.x;
 		OurVertices[i].normal.y = kindaTMP[i].norm.y;
 		OurVertices[i].normal.z = kindaTMP[i].norm.z;
+		OurVertices[i].normal.w = 1.f;
+
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
 		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
+
+		OurVertices[i].blendWeights.x = kindaTMP[i].blendWeights[0];
+		OurVertices[i].blendWeights.y = kindaTMP[i].blendWeights[1];
+		OurVertices[i].blendWeights.z = kindaTMP[i].blendWeights[2];
+		OurVertices[i].blendWeights.w = kindaTMP[i].blendWeights[3];
+
+		OurVertices[i].blendIndices.x = kindaTMP[i].boneIndices[0];
+		OurVertices[i].blendIndices.y = kindaTMP[i].boneIndices[1];
+		OurVertices[i].blendIndices.z = kindaTMP[i].boneIndices[2];
+		OurVertices[i].blendIndices.w = kindaTMP[i].boneIndices[3];
+
+
 	}
 	// describe the buffer
 	D3D11_BUFFER_DESC bd;
@@ -101,32 +106,35 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection)
 {
 	if (pSRV)
-		t_devcon->PSSetShaderResources(0, 1, &pSRV);
+		t_devcon->PSSetShaderResources(0u, 1u, &pSRV);
 	unsigned int offset = 0, stride = sizeof(Vertex);
-	XMMATRIX temp = XMMatrixTranspose(WVP * t_camProjection);
+	XMMATRIX temp = (WVP * t_camProjection);
 	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
 	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 	t_devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 
-	t_devcon->DrawIndexed(GetVertexData().size(), 0, 0);
+	t_devcon->DrawIndexed(indexCount, 0, 0);
 }
 
-void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection, bool _bones , ID3D11ShaderResourceView* pSRVB= nullptr,ID3D11Buffer* pVBufferB= nullptr, unsigned int _count = 0u)
+
+void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection, bool _bones, ID3D11ShaderResourceView* pSRVB, ID3D11Buffer* pVBufferB, unsigned int _count, ID3D11Buffer* _frameMatrices)
 {
 	if (Display)
 	{
 		if (pSRV)
 			t_devcon->PSSetShaderResources(0, 1, &pSRV);
 		unsigned int offset = 0, stride = sizeof(Vertex);
-		XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP) * t_camProjection);
+		XMMATRIX temp = (WVP*(*parentWVP) * t_camProjection);
 		t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
+		t_devcon->UpdateSubresource(_frameMatrices, 0, NULL, anim.frames[frame].data(), 0, 0);
 		t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 		t_devcon->Draw(indexCount, 0);
 		if (_bones) {
 			t_devcon->PSSetShaderResources(0, 1, &pSRVB);
 			t_devcon->IASetVertexBuffers(0, 1, &pVBufferB, &stride, &offset);
-			unsigned int i = -1; while (++i != boneBuffers.size()) {
-				XMMATRIX tempB = XMMatrixTranspose(boneBuffers[i]*(WVP) * t_camProjection);
+			unsigned int i = -1; while (++i != bonevec.size()) {
+				XMMATRIX tempB = (XMMATRIX((float*)&anim.frames[frame][i])*WVP*t_camProjection);
+
 				t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &tempB, 0, 0);
 				t_devcon->Draw(_count, 0);
 			}
@@ -140,7 +148,7 @@ void Model::Clean()
 
 }
 
-bool Model::LoadFromFile(const char* _path)
+bool Model::LoadFromFile(const char* _path, vector<Vertex>& _verts, vector<unsigned int>& _tris)
 
 {
 	ifstream reader;
@@ -150,6 +158,7 @@ bool Model::LoadFromFile(const char* _path)
 		vector<XMFLOAT4> verts;
 		vector<XMFLOAT4> norms;
 		vector<XMFLOAT4> uvs;
+		vector<Vec3I> indices;
 		char buffer[255];
 		while (!reader.eof())
 		{
@@ -195,7 +204,7 @@ bool Model::LoadFromFile(const char* _path)
 					unsigned int c;
 					ss >> c;
 					indices.push_back(Vec3I(a, b, c));
-					tris.push_back((unsigned int)indices.size() - 1);
+					_tris.push_back((unsigned int)indices.size() - 1);
 					if (lnStream.eof())
 						break;
 				}
@@ -215,19 +224,9 @@ bool Model::LoadFromFile(const char* _path)
 			vpc.position = verts[indices[i].x - 1];
 			vpc.uv = uvs[indices[i].y - 1];
 			vpc.normal = norms[indices[i].z - 1];
-			vertices.push_back(vpc);
+			_verts.push_back(vpc);
 		}
 		return true;
 	}
 	return false;
-}
-
-const vector<Vertex> Model::GetVertexData() const
-{
-	return vertices;
-}
-
-const vector<unsigned int> Model::GetTris() const
-{
-	return tris;
 }

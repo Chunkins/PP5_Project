@@ -2,6 +2,7 @@
 
 #include <vector>
 
+
 #ifdef FBXEXPORT_EXPORTS
 #define DLLEXPORT1 __declspec(dllexport)
 #else
@@ -86,25 +87,19 @@ struct VertexInfo
 	Float3 norm;
 	Float2 uv;
 };
-struct KeyFrame
-{
-	float keyTime;
-	Float4x4 transform;
-};
 struct BoneInfo
 {
 	int index;
 	int parentIndex;
-	BoneInfo *parent;
+	//BoneInfo *parent;
+	//std::vector<BoneInfo*> children;
 	Float4x4 transform;
-
-	std::vector<BoneInfo*> children;
-	std::vector<KeyFrame*>* keyframes;
 };
 struct Animation
 {
-	float _time;
-	std::vector<BoneInfo*> bones;
+	float time =0.f;
+	std::vector<float> times;
+	std::vector<std::vector<Float4x4>> frames;
 };
 
 
@@ -116,7 +111,7 @@ namespace EXP
 	{
 	public:
 		void saveFiletoBin(const char* inFileName, const char* binFileName);
-		void loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation* animation);
+		void loadFilefromBin(const char* inFileName, std::vector<VertexInfo> &returnData, std::vector<BoneInfo> &returnBone, Animation& animation);
 
 
 
