@@ -60,8 +60,7 @@ void DirectX_Render::InitPipeline(void)
 
 	};
 
-	devcon->VSSetShader(pVS, 0, 0);
-	devcon->PSSetShader(pPS, 0, 0);
+
 
 	dev->CreateInputLayout(reallayout, ARRAYSIZE(reallayout), VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
 }
@@ -70,8 +69,6 @@ void DirectX_Render::Update(void)
 {
 	NodeList[0].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
 	//Plane .WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
-
-
 	NodeList[1].GetModel()->WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 	//Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
 	//*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
@@ -88,15 +85,12 @@ void DirectX_Render::Update(void)
 		//Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
 	}
 
-
-
-
-
 	double totalRotation;
 	// Light calculations
 
 	float radiansPerSecond = XMConvertToRadians(m_degreesPerSecond);
-	totalRotation = GetCurrentTime() * radiansPerSecond * .001;
+
+	totalRotation = GetCurrentTime() * radiansPerSecond * .001f;
 	float radians = static_cast<float>(fmod(totalRotation, XM_2PI));
 
 
@@ -130,6 +124,11 @@ void DirectX_Render::Update(void)
 		m_lightChoice = 4;
 	if (GetAsyncKeyState(VK_LSHIFT) & 0x1)
 		SwapModel();
+	if (GetAsyncKeyState(VK_RSHIFT) & 0x1)
+	{
+		RSswap = !RSswap;
+		ToggleWireFrame();
+	}
 	if (GetAsyncKeyState('R') & 0x1)
 		Reset();
 
@@ -459,6 +458,39 @@ void DirectX_Render::InitGraphics(void)
 	samplerDesc.MaxLOD = FLT_MAX;
 
 	dev->CreateSamplerState(&samplerDesc, &m_sampler);
+	CreateDDSTextureFromFile(dev, L"BoneTexture.dds", nullptr, &pSRVB);
+	EXP::DLLTransit tmp;
+	Animation anime;
+	vector<BoneInfo> bonevec;
+	std::vector<VertexInfo> kindaTMP;
+	tmp.saveFiletoBin("Bone.fbx", "Bone.txt");
+	tmp.loadFilefromBin("Bone.txt", kindaTMP, bonevec, &anime);
+	indexCountB = kindaTMP.size();
+	Vertex* OurVertices = new Vertex[indexCountB];
+	unsigned i = UINT32_MAX; while (++i != indexCountB)
+	{
+		OurVertices[i].position.x = kindaTMP[i].pos.x;
+		OurVertices[i].position.y = kindaTMP[i].pos.y;
+		OurVertices[i].position.z = kindaTMP[i].pos.z;
+		OurVertices[i].position.w = 1.f;
+
+
+		OurVertices[i].normal.x = kindaTMP[i].norm.x;
+		OurVertices[i].normal.y = kindaTMP[i].norm.y;
+		OurVertices[i].normal.z = kindaTMP[i].norm.z;
+		OurVertices[i].uv.x = kindaTMP[i].uv.u;
+		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
+	}
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.ByteWidth = sizeof(Vertex) * indexCountB;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA vertexBufferData;
+	ZeroMemory(&vertexBufferData, sizeof(vertexBufferData));
+	vertexBufferData.pSysMem = OurVertices;
+	dev->CreateBuffer(&bd, &vertexBufferData, &pVBufferB);// create buffer
+	delete[] OurVertices;
+
 
 	//for (size_t i = 0; i < NodeList.size(); i++)
 	//{
@@ -475,6 +507,8 @@ void DirectX_Render::InitGraphics(void)
 	NodeList[2].InitRenderStateWireFrame(dev);
 
 
+
+
 }
 
 
@@ -486,25 +520,27 @@ void DirectX_Render::RenderFrame(void)
 	// clear the back buffer to a deep blue
 	float color[4] = { 0.0f, 0.2f, 0.4f, 1.0f };
 	devcon->ClearRenderTargetView(backbuffer, color);
-	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0); \
 
-		////////////////////////////////////////
-		// set model resources for standard models
-		///////////////////////////////////////
-		devcon->VSSetShader(pVS, 0, 0);
+	devcon->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	////////////////////////////////////////
+	// set model resources for standard models
+	///////////////////////////////////////
+	devcon->VSSetShader(pVS, 0, 0);
 	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->PSSetSamplers(0, 1, &m_sampler);
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->IASetInputLayout(pLayout);
+	XMMATRIX camProj = camView* camProjection;
 
 
 	devcon->RSSetState(NodeList[0].GetRS());
-	NodeList[0].GetModel()->DrawIndexed(dev, devcon, cbPerObjectBuffer, camView, camProjection);
+	NodeList[0].GetModel()->DrawIndexed(dev, devcon, cbPerObjectBuffer, camProj);
 	devcon->RSSetState(NodeList[1].GetRS());
-	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB);
 	devcon->RSSetState(NodeList[2].GetRS());
-	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
+	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB);
 
 
 	/*Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
@@ -550,7 +586,21 @@ void DirectX_Render::SwapModel()
 }
 void DirectX_Render::Reset()
 {
+	
 	Swap = false;
 	NodeList[1].GetModel()->Display = true; NodeList[2].GetModel()->Display = true;
 }
 
+void DirectX_Render::ToggleWireFrame()
+{
+	if (RSswap)
+	{
+		NodeList[1].InitRenderStateFill(dev);
+		NodeList[2].InitRenderStateFill(dev);
+	}
+	else
+	{
+		NodeList[1].InitRenderStateWireFrame(dev);
+		NodeList[2].InitRenderStateWireFrame(dev);
+	}
+}

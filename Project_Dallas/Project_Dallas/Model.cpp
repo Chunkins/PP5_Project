@@ -6,6 +6,7 @@ Model::Model(bool _Display, bool _isFBX)
 	WVP = XMMatrixIdentity();
 	Display = _Display;
 	isFBX = _isFBX;
+	
 }
 
 
@@ -43,7 +44,7 @@ void Model::Init(ID3D11Device * t_dev, char * filename, const wchar_t* _textFile
 	t_dev->CreateBuffer(&bDesc, &subData, &squareIndexBuffer);
 }
 
-void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textureFileName, XMMATRIX* _parentWVP, bool bones = false)
+void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textureFileName, XMMATRIX* _parentWVP, bool bones )
 {
 	parentWVP = _parentWVP;
 	// texture creation
@@ -61,8 +62,8 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 	if (bones) {
 		boneBuffers.resize(bonevec.size());
 		unsigned i = bonevec.size(); while (--i != UINT32_MAX) {
-			boneBuffers[i].WVP = XMMATRIX((float*)&bonevec[i].transform);
-			boneBuffers[i].InitFBX(t_dev, "Bone.fbx", L"BoneTexture.dds", &WVP);
+			boneBuffers[i] = XMMATRIX((float*)&bonevec[i].transform);
+			
 		}
 	}
 
@@ -83,7 +84,7 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 		OurVertices[i].normal.y = kindaTMP[i].norm.y;
 		OurVertices[i].normal.z = kindaTMP[i].norm.z;
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
-		OurVertices[i].uv.y = 1-  kindaTMP[i].uv.v;
+		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
 	}
 	// describe the buffer
 	D3D11_BUFFER_DESC bd;
@@ -97,34 +98,38 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 	delete[] OurVertices;
 }
 
-void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection)
+void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection)
 {
-	if(pSRV)
+	if (pSRV)
 		t_devcon->PSSetShaderResources(0, 1, &pSRV);
 	unsigned int offset = 0, stride = sizeof(Vertex);
-	WVP = WVP * t_camView * t_camProjection;
-	WVP = XMMatrixTranspose(WVP);
-	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &WVP, 0, 0);
+	XMMATRIX temp = XMMatrixTranspose(WVP * t_camProjection);
+	t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
 	t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 	t_devcon->IASetIndexBuffer(squareIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	
+
 	t_devcon->DrawIndexed(GetVertexData().size(), 0, 0);
 }
 
-void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camView, XMMATRIX& t_camProjection, bool _bones)
+void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection, bool _bones , ID3D11ShaderResourceView* pSRVB= nullptr,ID3D11Buffer* pVBufferB= nullptr, unsigned int _count = 0u)
 {
 	if (Display)
 	{
 		if (pSRV)
 			t_devcon->PSSetShaderResources(0, 1, &pSRV);
 		unsigned int offset = 0, stride = sizeof(Vertex);
-		XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP)* t_camView * t_camProjection);
+		XMMATRIX temp = XMMatrixTranspose(WVP*(*parentWVP) * t_camProjection);
 		t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
 		t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 		t_devcon->Draw(indexCount, 0);
 		if (_bones) {
-			unsigned int i = -1; while (++i != boneBuffers.size())
-				boneBuffers[i].Draw(t_devcon, t_cbPerObjectBuffer, t_camView, t_camProjection, false);
+			t_devcon->PSSetShaderResources(0, 1, &pSRVB);
+			t_devcon->IASetVertexBuffers(0, 1, &pVBufferB, &stride, &offset);
+			unsigned int i = -1; while (++i != boneBuffers.size()) {
+				XMMATRIX tempB = XMMatrixTranspose(boneBuffers[i]*(WVP) * t_camProjection);
+				t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &tempB, 0, 0);
+				t_devcon->Draw(_count, 0);
+			}
 		}
 	}
 
@@ -132,7 +137,7 @@ void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuf
 
 void Model::Clean()
 {
-	
+
 }
 
 bool Model::LoadFromFile(const char* _path)

@@ -8,14 +8,11 @@ RenderNode::RenderNode()
 	m_Model = new Model;
 }
 
-
 RenderNode::~RenderNode()
 {
 	if (mWireframeRS)
 		mWireframeRS->Release();
 }
-
-
 
 void RenderNode::InitRenderStateWireFrame(ID3D11Device *device)
 {

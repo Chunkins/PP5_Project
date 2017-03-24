@@ -57,10 +57,15 @@ struct VERTEX {
 class DirectX_Render
 {
 private:
+	bool Swap = false; // Are we currently in model swapping mode
+	ID3D11Buffer *pVBufferB;
+	ID3D11ShaderResourceView* pSRVB;
+	unsigned int indexCountB;
+	bool RSswap = false;
 	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	vector<RenderNode> NodeList; // My bettter container 
 
-	bool Swap = false; // Are we currently in model swapping mode
+
 	RenderNode Plane, Box, Teddy;
 	float prevTime, currTime;
 	float fakeTime = .001;
@@ -127,6 +132,8 @@ public:
 	void UpdateCamera(float const moveSpd, float rotSpd);
 	void SwapModel(); //Cycle Between the FBX Models
 	void Reset(); //Return everything in the scene to their Defaults (camera, light, model positions, etc...)
+	void ToggleWireFrame();
+	
 
 
 };
