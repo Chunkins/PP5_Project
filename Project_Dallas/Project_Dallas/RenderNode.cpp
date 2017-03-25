@@ -6,12 +6,14 @@ RenderNode::RenderNode()
 {
 	
 	m_Model = new Model;
+	m_Box = new SkyBox;
 }
 
 RenderNode::~RenderNode()
 {
 	if (mWireframeRS)
 		mWireframeRS->Release();
+
 }
 
 void RenderNode::InitRenderStateWireFrame(ID3D11Device *device)

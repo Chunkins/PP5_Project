@@ -39,6 +39,9 @@
     <ClCompile Include="RenderNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SkyBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Model.h">
@@ -65,6 +68,9 @@
     <ClInclude Include="RenderNode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SkyBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders.shader">
@@ -79,5 +85,8 @@
     <FxCompile Include="VertexShader.hlsl" />
     <FxCompile Include="LightPixelShader.hlsl" />
     <FxCompile Include="ModelVertexShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="BeachSkybox.dds" />
   </ItemGroup>
 </Project>

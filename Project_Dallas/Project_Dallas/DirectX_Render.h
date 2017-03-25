@@ -12,6 +12,7 @@
 #include "Model.h"
 #include "RenderNode.h"
 //#include "DirectXHelper.h"
+#include"SkyBox.h"
 #include <time.h>
 using namespace DirectX;
 //using namespace ;
@@ -61,9 +62,9 @@ private:
 	vector<Model> Models; //Container to store all the Models(Not in use yet)
 	vector<RenderNode> NodeList; // My bettter container 
 	unsigned int frame = 0u;
+	SkyBox skybox;
 
-
-	RenderNode Plane, Box, Teddy;
+	RenderNode Plane, Box, Teddy, Skybox;
 	float prevTime, currTime;
 	float fakeTime = .001f;
 	unsigned int m_lightChoice = 1u;

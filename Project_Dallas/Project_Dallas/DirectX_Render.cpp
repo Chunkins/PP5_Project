@@ -25,8 +25,9 @@ DirectX_Render::DirectX_Render()
 	NodeList.push_back(Plane);
 	NodeList.push_back(Box);
 	NodeList.push_back(Teddy);
-
-
+	NodeList.push_back(Skybox);
+	prevTime = 0;
+	currTime = 0;
 }
 
 
@@ -69,7 +70,6 @@ void DirectX_Render::Update(void)
 {
 	XMVECTOR pos = { 0.f,0.f,0.f,1.f };
 	NodeList[PLANE].GetModel()->WVP.r[3] = pos;
-
 	if (Swap) // If we're swapping between the models place them in the center
 	{
 		NodeList[BOX].GetModel()->WVP.r[3] = pos;
@@ -367,7 +367,6 @@ void DirectX_Render::InitD3D(HWND hWnd)
 
 	//Set the Projection matrix
 	camProjection = XMMatrixPerspectiveFovLH(70 * 3.14 / 180, SCREEN_WIDTH / SCREEN_HEIGHT, 0.0001f, 1000.0f);
-
 	InitPipeline();
 	InitGraphics();
 
@@ -512,7 +511,7 @@ void DirectX_Render::InitGraphics(void)
 	//	const wchar_t * tmp = NodeList[i].GetTName();
 	//	NodeList[i].GetModel()->Init(dev, NodeList[i].GetMName(), tmp);
 	//}
-
+	NodeList[3].GetBox()->Init(dev, "kkk");
 	NodeList[0].GetModel()->Init(dev, "plane.obj", nullptr);
 	NodeList[1].GetModel()->InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
 	NodeList[2].GetModel()->InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
@@ -525,6 +524,7 @@ void DirectX_Render::InitGraphics(void)
 	NodeList[0].InitRenderStateFill(dev);
 	NodeList[1].InitRenderStateWireFrame(dev);
 	NodeList[2].InitRenderStateWireFrame(dev);
+	NodeList[3].InitRenderStateFill(dev);
 
 	//set constant buffers
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
@@ -549,12 +549,17 @@ void DirectX_Render::RenderFrame(void)
 	////////////////////////////////////////
 	// set model resources for standard models
 	///////////////////////////////////////
+
+
+
 	devcon->VSSetShader(pVS, 0, 0);
 	devcon->PSSetShader(pPS, 0, 0);
 	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	devcon->PSSetSamplers(0, 1, &m_sampler);
 	devcon->IASetInputLayout(pLayout);
-	XMMATRIX camProj = camView* camProjection;
+	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
+	devcon->VSSetConstantBuffers(1, 1, &frameBufer);
+	XMMATRIX camProj = camView *  camProjection;
 
 
 
@@ -564,7 +569,17 @@ void DirectX_Render::RenderFrame(void)
 	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, deltaTime, true, pSRVB,pVBufferB,indexCountB,frameBufer);
 	devcon->RSSetState(NodeList[2].GetRS());
 	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, deltaTime, true, pSRVB,pVBufferB,indexCountB,frameBufer);
+	
+	devcon->VSSetShader(NodeList[3].GetBox()->GetVShader(), 0, 0);
+	devcon->PSSetShader(NodeList[3].GetBox()->GetPShader(), 0, 0);
+	devcon->IASetInputLayout(NodeList[3].GetBox()->GetILayout());
 
+	devcon->RSSetState(NodeList[3].GetRS());
+	NodeList[3].GetBox()->Draw(devcon, camProjection, camView, m_camera, World);
+
+	
+
+	
 
 	/*Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);
 	Teddy.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);

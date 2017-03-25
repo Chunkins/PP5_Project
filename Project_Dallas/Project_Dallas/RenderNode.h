@@ -1,6 +1,6 @@
 #pragma once
 #include "Model.h"
-
+#include "SkyBox.h"
 
 
 
@@ -9,6 +9,7 @@ class RenderNode
 private:
 	ID3D11RasterizerState* mWireframeRS;
 	Model* m_Model;
+	SkyBox * m_Box; //SKYbox stuff
 	wchar_t   m_TextureName;
 	char * m_ModelName;
 	int type; // 1 = fbx    2 = obj
@@ -21,6 +22,7 @@ public:
 
 	ID3D11RasterizerState* GetRS() { return mWireframeRS; }
 	Model* GetModel() { return m_Model; }
+	SkyBox *GetBox() { return m_Box; } //Skybo
 
 	void SetMName(char *  name) { m_ModelName = name; }
 	char*  GetMName() { return m_ModelName; }
