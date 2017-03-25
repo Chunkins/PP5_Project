@@ -586,7 +586,7 @@ void DirectX_Render::RenderFrame(void)
 	devcon->IASetInputLayout(NodeList[3].GetBox()->GetILayout());
 
 	devcon->RSSetState(NodeList[3].GetRS());
-	NodeList[3].GetBox()->Draw(devcon, camProj, camView, m_camera, World);
+	NodeList[3].GetBox()->Draw(devcon, camProjection, camView, m_camera, World);
 
 	
 
