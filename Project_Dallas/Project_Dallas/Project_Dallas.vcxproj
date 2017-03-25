@@ -157,6 +157,7 @@
     <ClCompile Include="Model.cpp" />
     <ClCompile Include="modelclass.cpp" />
     <ClCompile Include="RenderNode.cpp" />
+    <ClCompile Include="SkyBox.cpp" />
     <ClCompile Include="textureclass.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -168,6 +169,7 @@
     <ClInclude Include="modelclass.h" />
     <ClInclude Include="PCH.h" />
     <ClInclude Include="RenderNode.h" />
+    <ClInclude Include="SkyBox.h" />
     <ClInclude Include="textureclass.h" />
   </ItemGroup>
   <ItemGroup>
@@ -228,6 +230,9 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="BeachSkybox.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

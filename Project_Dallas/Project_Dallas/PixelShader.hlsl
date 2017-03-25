@@ -1,21 +1,16 @@
-Texture2D shaderTexture;
-SamplerState SampleType;
 
-struct Input
+struct PixelShaderInput
 {
-	float4 pos : SV_POSITION;
-	float4 color : COLOR;
+	float4 position : SV_POSITION;
+	float3 uv : UV;
 };
 
-float4 main(Input _pix) : SV_TARGET
+textureCUBE env;
+SamplerState envFilter;
+
+float4 main(PixelShaderInput input) : SV_TARGET
 {
-//	float4 textureColor;
-//
-//
-//// Sample the pixel color from the texture using the sampler at this texture coordinate location.
-//textureColor = shaderTexture.Sample(SampleType, input.color.xy);
-//
-//return textureColor;
-	//return float4(0.f,0.f,1.0,0.f);
-	return _pix.color;
+	return env.Sample(envFilter, input.uv);
 }
+
+

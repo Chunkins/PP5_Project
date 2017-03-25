@@ -1,32 +1,36 @@
-cbuffer cbPerObject
+cbuffer ModelViewProjectionConstantBuffer
 {
-	float4x4 WVP;
+	matrix worldMatrix;
+	matrix viewMatrix;
+	matrix projectionMatrix;
 };
 
-//cbuffer viewProj : register(b1)
-//{
-//	
-//}
-
-struct Input
+struct VertexShaderInput
 {
-	float4 pos : POSITION;
-	float4 normal : NORMAL;
-	float4 uv : UV;
+	float3 position : POSITION;
+	float3 uv : UV;
 };
 
-struct Output
+struct PixelShaderInput
 {
-	float4 pos : SV_POSITION;
-	float4 color : COLOR;
+	float4 position : SV_POSITION;
+	float3 uv : UV;
 };
 
-Output main(Input _in)
+PixelShaderInput main(VertexShaderInput input)
 {
-	Output ret;
-	float4 pos = _in.pos;
-	pos = mul(pos, WVP);
-	ret.pos = pos;
-	ret.color = _in.normal;
-	return ret;
+	PixelShaderInput output;
+
+	float4 position = float4(input.position, 1.0);
+
+	// Calculate the position of the vertex against the world, view, and projection matrices.
+	position = mul(position, worldMatrix);
+	position = mul(position, viewMatrix);
+	position = mul(position, projectionMatrix);
+
+	// Send the unmodified position through to the pixel shader.
+	output.position = position;
+	output.uv = input.position;
+
+	return output;
 }
