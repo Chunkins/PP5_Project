@@ -97,38 +97,39 @@ void EXP::DLLTransit::saveFiletoBin(const char* inFileName, const char* binFileN
 
 		for (size_t i = 0; i < boneCount; i++)
 		{
-			outbinFile.write((char*)&bones[i].mMyIndex, sizeof(int));
-			outbinFile.write((char*)&bones[i].mParentIndex, sizeof(int));
+			//outbinFile.write((char*)&bones[i].mMyIndex, sizeof(int));
+			//outbinFile.write((char*)&bones[i].mParentIndex, sizeof(int));
 
-			Float4x4 initTransform;
+			DirectX::XMMATRIX invBindPosT;
 			for (size_t j = 0; j < 4; j++)
 			{
 				for (size_t k = 0; k < 4; k++)
 				{
-					initTransform.m[j][k] = (float)bones[i].mGlobalBindposeInverse[j][k];
+					invBindPosT.r[j].m128_f32[k] = (float)bones[i].mGlobalBindposeInverse[j][k];
 				}
 			}
-			//initTransform.m[3][1] *= -1;
-			//initTransform.m[3][2] *= -1;
-			outbinFile.write((char*)&initTransform, sizeof(Float4x4));
+			//this is because it is a fbx A matrix...
+			DirectX::XMMatrixTranspose(invBindPosT);
+			outbinFile.write((char*)&invBindPosT, sizeof(Float4x4));
 
 			walk = bones[i].mAnimation;
 
 			int l = -1; while (++l != frameCount)
 			{
 				if (walk) {
-					Float4x4 keyFrameTransform;
+					DirectX::XMMATRIX keyFrameTransform;
 					for (size_t j = 0; j < 4; j++)
 						for (size_t k = 0; k < 4; k++)
-							keyFrameTransform.m[j][k] = (float)walk->mGlobalTransform[j][k];
-					//keyFrameTransform.m[3][1] *= -1;
-					//keyFrameTransform.m[3][2] *= -1;
+							keyFrameTransform.r[j].m128_f32[k] = (float)walk->mGlobalTransform[j][k];
+					//keyFrameTransform = (invBindPosT*keyFrameTransform);
+
+
 					outbinFile.write((char*)&keyFrameTransform, sizeof(Float4x4));
 					walk = walk->mNext;
 				}
 				else
 				{
-					outbinFile.write((char*)&initTransform, sizeof(Float4x4));
+					outbinFile.write((char*)&invBindPosT, sizeof(Float4x4));
 				}
 			}
 
@@ -199,14 +200,17 @@ void EXP::DLLTransit::loadFilefromBin(const char* inFileName, std::vector<Vertex
 	int k = -1; while (++k != boneCount)
 	{
 		BoneInfo joint;
-		inbinFile.read((char*)&joint.index, sizeof(int));
-		inbinFile.read((char*)&joint.parentIndex, sizeof(int));
-		inbinFile.read((char*)&joint.transform, sizeof(Float4x4));
-		returnBone.push_back(joint);
+		//inbinFile.read((char*)&joint.index, sizeof(int));
+		//inbinFile.read((char*)&joint.parentIndex, sizeof(int));
+		DirectX::XMMATRIX invBindPos;
+		inbinFile.read((char*)&invBindPos, sizeof(Float4x4));
 		int i = -1; while (++i != frameCount)
 		{
 			inbinFile.read((char*)&animation.frames[i][k], sizeof(Float4x4));
+			joint.frameTransforms.push_back(animation.frames[i][k]);
+			animation.frames[i][k] = invBindPos*animation.frames[i][k];
 		}
+		returnBone.push_back(joint);
 	}
 
 	inbinFile.read((char*)&animation.time, sizeof(float));

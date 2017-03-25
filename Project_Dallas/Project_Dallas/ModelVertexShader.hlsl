@@ -13,7 +13,7 @@ struct VertexShaderInput
 {
 	int4 boneCt : BONECOUNT;
 	float4 pos : POSITION;
-	float4 normal : NORMAL;
+	float3 normal : NORMAL;
 	float4 uv : UV;
 	float4 blendWt : BLENDWEIGHT;
 	int4 blendInd : BLENDINDICES;
@@ -23,7 +23,7 @@ struct VertexShaderInput
 struct PixelShaderInput
 {
 	float4 pos : SV_POSITION;
-	float4 normal : NORMAL;
+	float3 normal : NORMAL;
 	float4 uv : UV;
 	float3 worldPos : POSITION;
 
@@ -34,16 +34,17 @@ PixelShaderInput main(VertexShaderInput input)
 {
 	PixelShaderInput output;
 	float4 pos = input.pos;
-	float3 norm = float3(0.0f, 0.0f, 0.0f);
+	float3 norm = input.normal;
 	float lastWeight = 0.0f;
 	input.normal = normalize(input.normal);
 	if (input.boneCt.x > 4)
 		input.boneCt.x = 4;
 	if (input.boneCt.x > 0) {
 		pos = float4(0.0f, 0.0f, 0.0f, 1.0f);
+		norm = float3(0.0f, 0.0f, 0.0f);
 		int i = -1; while (++i < input.boneCt.x) {
-			pos +=  mul( boneTransforms[input.blendInd[i]], input.pos)*input.blendWt[i].x;
-			//norm += input.blendWt[i] * mul(input.normal, boneTransforms[input.blendInd[i]]);
+			pos +=  mul(input.pos, boneTransforms[input.blendInd[i]])*input.blendWt[i];
+			norm += input.blendWt[i] * mul(input.normal, boneTransforms[input.blendInd[i]]);
 		}
 		pos.w = 1.f;
 		norm = normalize(norm);
@@ -54,7 +55,7 @@ PixelShaderInput main(VertexShaderInput input)
 	output.worldPos = pos;
 	output.pos = pos;
 
-	output.normal = input.normal;
+	output.normal = norm;
 	output.uv = input.uv;
 
 	return output;

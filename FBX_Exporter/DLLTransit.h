@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <DirectXMath.h>
 
 
 #ifdef FBXEXPORT_EXPORTS
@@ -89,17 +90,17 @@ struct VertexInfo
 };
 struct BoneInfo
 {
-	int index;
-	int parentIndex;
+	//int index;
+	//int parentIndex;
 	//BoneInfo *parent;
 	//std::vector<BoneInfo*> children;
-	Float4x4 transform;
+	std::vector<DirectX::XMMATRIX> frameTransforms;
 };
 struct Animation
 {
 	float time =0.f;
 	std::vector<float> times;
-	std::vector<std::vector<Float4x4>> frames;
+	std::vector<std::vector<DirectX::XMMATRIX>> frames;
 };
 
 

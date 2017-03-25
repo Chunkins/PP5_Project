@@ -6,7 +6,6 @@ Model::Model(bool _Display, bool _isFBX)
 	WVP = XMMatrixIdentity();
 	Display = _Display;
 	isFBX = _isFBX;
-
 }
 
 
@@ -74,7 +73,6 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 		OurVertices[i].normal.x = kindaTMP[i].norm.x;
 		OurVertices[i].normal.y = kindaTMP[i].norm.y;
 		OurVertices[i].normal.z = kindaTMP[i].norm.z;
-		OurVertices[i].normal.w = 1.f;
 
 		OurVertices[i].uv.x = kindaTMP[i].uv.u;
 		OurVertices[i].uv.y = 1 - kindaTMP[i].uv.v;
@@ -101,6 +99,7 @@ void Model::InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textu
 	vertexBufferData.pSysMem = OurVertices;
 	t_dev->CreateBuffer(&bd, &vertexBufferData, &pVBuffer);// create buffer
 	delete[] OurVertices;
+	time = anim.times[1];
 }
 
 void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection)
@@ -117,23 +116,57 @@ void Model::DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID
 }
 
 
-void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection, bool _bones, ID3D11ShaderResourceView* pSRVB, ID3D11Buffer* pVBufferB, unsigned int _count, ID3D11Buffer* _frameMatrices)
+void Model::Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection, float _dTime, bool _bones, ID3D11ShaderResourceView* pSRVB, ID3D11Buffer* pVBufferB, unsigned int _count, ID3D11Buffer* _frameMatrices)
 {
 	if (Display)
 	{
 		if (pSRV)
 			t_devcon->PSSetShaderResources(0, 1, &pSRV);
-		unsigned int offset = 0, stride = sizeof(Vertex);
+		unsigned int offset = 0, stride = sizeof(Vertex), frame;
 		XMMATRIX temp = (WVP*(*parentWVP) * t_camProjection);
 		t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &temp, 0, 0);
-		t_devcon->UpdateSubresource(_frameMatrices, 0, NULL, anim.frames[frame].data(), 0, 0);
+		
+		float ratio;
+		XMMATRIX *frame2, *frame1;
+		time += _dTime;
+		if (time > anim.times[anim.times.size()-1])
+			time = anim.times[1];
+
+		int i = 0; while (++i != 61)
+			if (time <= anim.times[i])
+			{
+				frame = i;
+				frame2 = anim.frames[i].data();
+				if (i == 1) {
+					frame1 = anim.frames[anim.frames.size() - 1].data();
+					ratio = time / (anim.times[i]);
+				}
+				else {
+					frame1 = anim.frames[i - 1].data();
+					ratio = (time - anim.times[i - 1]) / (anim.times[i] - anim.times[i - 1]);
+				}
+				break;
+			}
+
+		XMMATRIX frames[40];
+		i = -1; while (++i != 40)
+		{
+			int j = -1; while (++j!=4)
+			{
+				frames[i].r[j] = XMVectorLerp(frame1[i].r[j], frame2[i].r[j], ratio);
+
+			}
+		}
+
+
+		t_devcon->UpdateSubresource(_frameMatrices, 0, NULL, &frames, 0, 0);
 		t_devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 		t_devcon->Draw(indexCount, 0);
 		if (_bones) {
 			t_devcon->PSSetShaderResources(0, 1, &pSRVB);
 			t_devcon->IASetVertexBuffers(0, 1, &pVBufferB, &stride, &offset);
 			unsigned int i = -1; while (++i != bonevec.size()) {
-				XMMATRIX tempB = (XMMATRIX((float*)&anim.frames[frame][i])*WVP*t_camProjection);
+				XMMATRIX tempB = (bonevec[i].frameTransforms[frame]*WVP*t_camProjection);
 
 				t_devcon->UpdateSubresource(t_cbPerObjectBuffer, 0, NULL, &tempB, 0, 0);
 				t_devcon->Draw(_count, 0);
@@ -156,7 +189,7 @@ bool Model::LoadFromFile(const char* _path, vector<Vertex>& _verts, vector<unsig
 	if (reader.is_open())
 	{
 		vector<XMFLOAT4> verts;
-		vector<XMFLOAT4> norms;
+		vector<XMFLOAT3> norms;
 		vector<XMFLOAT4> uvs;
 		vector<Vec3I> indices;
 		char buffer[255];
@@ -176,9 +209,8 @@ bool Model::LoadFromFile(const char* _path, vector<Vertex>& _verts, vector<unsig
 			}
 			else if (firstWord == "vn")
 			{
-				XMFLOAT4 coords;
+				XMFLOAT3 coords;
 				lnStream >> coords.x >> coords.y >> coords.z;
-				coords.w = 1;
 				norms.push_back(coords);
 			}
 			else if (firstWord == "vt")
@@ -217,7 +249,6 @@ bool Model::LoadFromFile(const char* _path, vector<Vertex>& _verts, vector<unsig
 			norms[indices[i].z - 1].x = 1;
 			norms[indices[i].z - 1].z = 1;
 			norms[indices[i].z - 1].y = 1;
-			norms[indices[i].z - 1].w = 1;
 			/////////////////////////////////
 
 			Vertex vpc;

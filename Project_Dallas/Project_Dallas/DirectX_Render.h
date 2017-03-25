@@ -20,6 +20,9 @@ using namespace DirectX;
 // define the screen resolution
 #define SCREEN_WIDTH  800.f
 #define SCREEN_HEIGHT 600.f
+#define PLANE 0
+#define BOX 1
+#define TEDDY 2
 // include the Direct3D Library file
 #pragma comment (lib, "D3DCompiler.lib")
 #pragma comment (lib, "d3d11.lib")
@@ -74,6 +77,7 @@ private:
 	ID3D11Buffer* m_lightBuffer;
 	ID3D11SamplerState * m_sampler ;
 	float delta_time = .001f;
+	float deltaTime = 0.f;
 	float rot = 0.01f;
 	ID3D11DepthStencilView* depthStencilView;
 	ID3D11Texture2D* depthStencilBuffer;

@@ -132,9 +132,6 @@ void FBXExport::ProcessGeometry(FbxNode* inNode)
 	}
 }
 
-
-
-
 void FBXExport::ProcessSkeletonHierarchy(FbxNode* inRootNode)
 {
 
@@ -153,6 +150,11 @@ void FBXExport::ProcessSkeletonHierarchyRecursively(FbxNode* inNode, int inDepth
 		currJoint.mParentIndex = inParentIndex;
 		currJoint.mMyIndex = myIndex;
 		currJoint.mName = inNode->GetName();
+		//cheesy as fuck... i know...
+		if (!strcmp( currJoint.mName.c_str(), "Nose_J") || !strcmp(currJoint.mName.c_str(), "Weapon_Attach_J") || !strcmp(currJoint.mName.c_str(), "L_Toe_J") || !strcmp(currJoint.mName.c_str(), "R_Toe_J"))
+		{
+			return;
+		}
 		mSkeleton.mJoints.push_back(currJoint);
 	}
 	for (int i = 0; i < inNode->GetChildCount(); i++)

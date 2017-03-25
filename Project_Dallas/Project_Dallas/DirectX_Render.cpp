@@ -27,8 +27,6 @@ DirectX_Render::DirectX_Render()
 	NodeList.push_back(Teddy);
 
 
-	prevTime = 0;
-	currTime = 0;
 }
 
 
@@ -55,7 +53,7 @@ void DirectX_Render::InitPipeline(void)
 	{
 		{ "BONECOUNT", 0, DXGI_FORMAT_R32G32B32A32_UINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "UV", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "BLENDINDICES", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
@@ -69,22 +67,20 @@ void DirectX_Render::InitPipeline(void)
 
 void DirectX_Render::Update(void)
 {
-	NodeList[0].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
-	//Plane .WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(10.f, 10.f, 10.f);
-	NodeList[1].GetModel()->WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	//Box.WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	//*Box.parentWVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-	//Box.WVP.r[3].m128_f32[1] += .001f;
-
-	NodeList[2].GetModel()->WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
-	//Teddy.WVP = XMMatrixTranslation(5.0f / 0.05f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+	XMVECTOR pos = { 0.f,0.f,0.f,1.f };
+	NodeList[PLANE].GetModel()->WVP.r[3] = pos;
 
 	if (Swap) // If we're swapping between the models place them in the center
 	{
-		NodeList[1].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-		//Box.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(1.f, 1.f, 1.f);
-		NodeList[2].GetModel()->WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
-		//Teddy.WVP = XMMatrixTranslation(0.0f, 0.f, 0.f) * XMMatrixScaling(0.05f, 0.05f, 0.05f);
+		NodeList[BOX].GetModel()->WVP.r[3] = pos;
+		NodeList[TEDDY].GetModel()->WVP.r[3] = pos;
+	}
+	else {
+		pos.m128_f32[0] = -5;
+		NodeList[BOX].GetModel()->WVP.r[3] = pos;
+		pos.m128_f32[0] = 5;
+		NodeList[TEDDY].GetModel()->WVP.r[3] = pos;
+
 	}
 
 	double totalRotation;
@@ -134,18 +130,6 @@ void DirectX_Render::Update(void)
 	}
 	if (GetAsyncKeyState('R') & 0x1)
 		Reset();
-	if (GetAsyncKeyState('F') & 0x1) {
-		++Teddy.GetModel()->frame;
-		++Box.GetModel()->frame;
-		if (Teddy.GetModel()->frame>Teddy.GetModel()->anim.time-1)
-		{
-			Teddy.GetModel()->frame = 1;
-		}
-		if (Box.GetModel()->frame>Box.GetModel()->anim.time - 1)
-		{
-			Box.GetModel()->frame = 1;
-		}
-	}
 
 	UpdateLights();
 	UpdateCamera(.01f, 5.0f);
@@ -155,7 +139,7 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 {
 	prevTime = currTime;
 	currTime = GetCurrentTime();
-	float deltaTime = (currTime - prevTime);
+	deltaTime = (currTime - prevTime);
 
 	if (GetAsyncKeyState('W'))
 	{
@@ -252,7 +236,7 @@ void DirectX_Render::UpdateCamera(float const moveSpd, float rotSpd)
 
 	}
 
-
+	deltaTime *= .002f;
 }
 
 void DirectX_Render::InitD3D(HWND hWnd)
@@ -532,18 +516,22 @@ void DirectX_Render::InitGraphics(void)
 	NodeList[0].GetModel()->Init(dev, "plane.obj", nullptr);
 	NodeList[1].GetModel()->InitFBX(dev, "Box_Idle.fbx", L"TestCube.dds", &World, true);
 	NodeList[2].GetModel()->InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
-	//Teddy.InitFBX(dev, "Teddy_Idle.fbx", L"Teddy_D.dds", &World, true);
+
+	NodeList[0].GetModel()->WVP = XMMatrixScaling(10.f, 10.f, 10.f);
+	NodeList[1].GetModel()->WVP = XMMatrixTranslation(-5.0f, 0.f, 0.f);
+
+	NodeList[2].GetModel()->WVP = XMMatrixScaling(0.05f, 0.05f, 0.05f);
+
 	NodeList[0].InitRenderStateFill(dev);
 	NodeList[1].InitRenderStateWireFrame(dev);
 	NodeList[2].InitRenderStateWireFrame(dev);
 
-
-
-
-
 	//set constant buffers
 	devcon->VSSetConstantBuffers(0, 1, &cbPerObjectBuffer);
 	devcon->VSSetConstantBuffers(1, 1, &frameBufer);
+
+	prevTime = 0;
+	currTime = 0;
 }
 
 
@@ -573,9 +561,9 @@ void DirectX_Render::RenderFrame(void)
 	devcon->RSSetState(NodeList[0].GetRS());
 	NodeList[0].GetModel()->DrawIndexed(dev, devcon, cbPerObjectBuffer, camProj);
 	devcon->RSSetState(NodeList[1].GetRS());
-	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB,frameBufer);
+	NodeList[1].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, deltaTime, true, pSRVB,pVBufferB,indexCountB,frameBufer);
 	devcon->RSSetState(NodeList[2].GetRS());
-	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, true, pSRVB,pVBufferB,indexCountB,frameBufer);
+	NodeList[2].GetModel()->Draw(devcon, cbPerObjectBuffer, camProj, deltaTime, true, pSRVB,pVBufferB,indexCountB,frameBufer);
 
 
 	/*Box.Draw(devcon, cbPerObjectBuffer, camView, camProjection, true);

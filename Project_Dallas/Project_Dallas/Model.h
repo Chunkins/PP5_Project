@@ -10,13 +10,11 @@
 using namespace std;
 using namespace DirectX;
 
-
-
 struct Vertex
 {
-	XMUINT4 boneCount;
+	XMUINT4 boneCount = { 0u,0u,0u,0u };
 	XMFLOAT4 position;
-	XMFLOAT4 normal;
+	XMFLOAT3 normal;
 	XMFLOAT4 uv;
 	XMFLOAT4 blendWeights;
 	XMINT4 blendIndices;
@@ -40,7 +38,7 @@ public:
 	void InitFBX(ID3D11Device * t_dev, char * filename, const wchar_t* _textFileNAme, XMMATRIX*, bool);
 	void DrawIndexed(ID3D11Device * t_dev, ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX& t_camProjection);
 
-	void Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX&, bool, ID3D11ShaderResourceView*, ID3D11Buffer*, unsigned int, ID3D11Buffer*);
+	void Draw(ID3D11DeviceContext * t_devcon, ID3D11Buffer * t_cbPerObjectBuffer, XMMATRIX&, float, bool, ID3D11ShaderResourceView*, ID3D11Buffer*, unsigned int, ID3D11Buffer*);
 	bool LoadFromFile(const char* _path, vector<Vertex>&, vector<unsigned int>&);
 	void Clean();
 
@@ -48,8 +46,8 @@ public:
 	ID3D11Buffer* squareIndexBuffer = nullptr;
 	ID3D11Buffer *pVBuffer;
 	ID3D11ShaderResourceView* pSRV = nullptr;
-
-	unsigned int indexCount, frame = 0u;
+	float time;
+	unsigned int indexCount;
 	
 	XMMATRIX* parentWVP;
 	vector<BoneInfo> bonevec;
