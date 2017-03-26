@@ -79,6 +79,7 @@
     <None Include="plane.obj" />
     <None Include="TestCube.dds" />
     <None Include="Teddy_D.dds" />
+    <None Include="OutputCube.dds" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PixelShader.hlsl" />

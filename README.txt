@@ -8,8 +8,14 @@ right - D
 down - x
 up - space
 
-Toggle show model - 1
-Toggle show bone - 2
+Toggle Wireframe - RightShift
+Switch Model Focus - LeftShift
+Reset Focus - R
+
+Directional Light - 0 or 1
+Point Light - 2
+Spot Light and Directional - 3
+Directional and Point Light - 4
 
 
 *NOTE*

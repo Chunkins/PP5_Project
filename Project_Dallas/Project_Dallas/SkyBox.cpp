@@ -35,7 +35,7 @@ void SkyBox::Init(ID3D11Device * t_dev, char * filename)
 	//devcon->VSSetShader(pVS, 0, 0);
 	//devcon->PSSetShader(pPS, 0, 0);
 	//devcon->IASetInputLayout(pLayout);
-	CreateDDSTextureFromFile(t_dev, L"BeachSkybox.dds", (ID3D11Resource**)&skyboxTexture, &skyboxModelView);
+	CreateDDSTextureFromFile(t_dev, L"OutputCube.dds", (ID3D11Resource**)&skyboxTexture, &skyboxModelView);
 
 	XMFLOAT3 skyOffset = XMFLOAT3(1, 1, 1);
 
@@ -115,4 +115,16 @@ void SkyBox::Draw(ID3D11DeviceContext * t_devcon, XMMATRIX t_camProjection, XMMA
 
 SkyBox::~SkyBox()
 {
+	if (m_skyboxIndexBuffer)
+	{
+		m_skyboxIndexBuffer->Release();
+		m_skyboxVertexBuffer->Release();
+		ConstantinoBiffer->Release();
+		skyboxVertexShader->Release();
+		skyboxPixelShader->Release();
+		skyboxTexture->Release();
+		skyboxModelView->Release();
+		dLayout->Release();
+	}
+	
 }
